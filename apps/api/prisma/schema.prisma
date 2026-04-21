@@ -1,0 +1,299 @@
+// LifeOS — Prisma Schema
+// Run: yarn db:generate
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum SubscriptionTier {
+  FREE
+  TRIAL
+  PREMIUM
+}
+
+enum GoalHorizon {
+  LONG_TERM   // 1+ year
+  MID_TERM   // quarter/month
+}
+
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum Quadrant {
+  I     // urgent + important
+  II    // not urgent + important (Big Rocks)
+  III   // urgent + not important
+  IV    // not urgent + not important
+}
+
+enum TaskStatus {
+  TODO
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETE
+}
+
+enum PriorityType {
+  BIG_ROCK
+  NORMAL
+}
+
+enum HabitFrequency {
+  DAILY
+  WEEKLY
+  CUSTOM
+}
+
+// ============================================
+// MODELS
+// ============================================
+
+model User {
+  id                    String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                 String          @unique
+  passwordHash          String          @map("password_hash")
+  subscriptionTier     SubscriptionTier @default(TRIAL)
+  trialExpiresAt        DateTime?        @map("trial_expires_at")
+  subscriptionExpiresAt DateTime?        @map("subscription_expires_at")
+  uploadedBytes        BigInt           @default(0) @map("uploaded_bytes")
+
+  // Time scale configuration (set during onboarding)
+  // {
+  //   "boulder": { "value": 2, "unit": "hours" },
+  //   "rock":    { "value": 1, "unit": "hours" },
+  //   "pebble":  { "value": 15, "unit": "minutes" },
+  //   "sand":    { "value": 5, "unit": "minutes" }
+  // }
+  timeScaleConfig       Json?            @map("time_scale_config")
+
+  // relations
+  roles                 Role[]
+  values                Value[]
+  goals                Goal[]
+  tasks                Task[]
+  timeBlocks           TimeBlock[]
+  habits               Habit[]
+  habitLogs            HabitLog[]
+  journalEntries       JournalEntry[]
+  fileUploads          FileUpload[]
+
+  // timestamps
+  createdAt            DateTime         @default(now()) @map("created_at")
+  updatedAt            DateTime         @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Role {
+  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String  @map("user_id") @db.Uuid
+  name            String
+  description    String?
+  priorityWeight Int      @default(3) @map("priority_weight")
+  color           String   @default("#6366f1") // hex color
+
+  // relations
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goals  Goal[]
+  tasks  Task[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("roles")
+}
+
+model Value {
+  id   String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId String  @map("user_id") @db.Uuid
+  text String
+
+  // optional tags: ["family", "career"]
+  tags String[]
+
+  // relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("values")
+}
+
+model Goal {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String     @map("user_id") @db.Uuid
+  roleId      String?    @map("role_id") @db.Uuid
+  title       String
+  description String?
+  horizon    GoalHorizon
+  targetDate DateTime?  @map("target_date")
+  status     GoalStatus @default(ACTIVE)
+
+  // relations
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role  Role?  @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  tasks Task[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([roleId])
+  @@map("goals")
+}
+
+model Task {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String     @map("user_id") @db.Uuid
+  roleId       String?    @map("role_id") @db.Uuid
+  goalId       String?    @map("goal_id") @db.Uuid
+  parentTaskId String?    @map("parent_task_id") @db.Uuid
+
+  title        String
+  description String?
+  duration    Int          // minutes
+  quadrant    Quadrant     @default(I)
+
+  status       TaskStatus   @default(TODO)
+  priorityType PriorityType @default(NORMAL) @map("priority_type")
+
+  energyLevel  Int?        @map("energy_level") // 1-5
+
+  // relations
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        Role?       @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  goal        Goal?       @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  parentTask  Task?       @relation("TaskSubtasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  subtasks    Task[]      @relation("TaskSubtasks")
+  timeBlocks  TimeBlock[]
+
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([roleId])
+  @@index([goalId])
+  @@index([parentTaskId])
+  @@map("tasks")
+}
+
+model TimeBlock {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  taskId     String   @map("task_id") @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  startTime  DateTime @map("start_time")
+  endTime    DateTime @map("end_time")
+  date       DateTime // denormalized for queries
+
+  // relations
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([taskId])
+  @@index([date])
+  @@map("time_blocks")
+}
+
+model Habit {
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String       @map("user_id") @db.Uuid
+  name         String
+  frequency    HabitFrequency @default(DAILY)
+  targetCount  Int            @default(1) @map("target_count")
+
+  // relations
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  habitLogs HabitLog[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("habits")
+}
+
+model HabitLog {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  habitId   String   @map("habit_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  date      DateTime
+  completed Boolean  @default(false)
+
+  // relations
+  habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([habitId, date])
+  @@index([userId])
+  @@index([date])
+  @@map("habit_logs")
+}
+
+model JournalEntry {
+  id       String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId   String  @map("user_id") @db.Uuid
+  date     DateTime
+
+  // JSONB: bullet journal entries
+  // [
+  //   { "type": "task", "content": "Call mom", "completed": false },
+  //   { "type": "event", "content": "Meeting at 2pm" },
+  //   { "type": "note", "content": "Idea for project" }
+  // ]
+  entries Json?
+
+  // optional metadata
+  metadata Json?
+
+  // relations
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileUploads FileUpload[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@map("journal_entries")
+}
+
+model FileUpload {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  fileUrl         String   @map("file_url") @db.VarChar(500)
+  fileName        String   @map("file_name")
+  mimeType        String?  @map("mime_type") @db.VarChar(100)
+  journalEntryId String?  @map("journal_entry_id") @db.Uuid
+
+  // relations
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  journalEntry JournalEntry? @relation(fields: [journalEntryId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([journalEntryId])
+  @@map("file_uploads")
+}

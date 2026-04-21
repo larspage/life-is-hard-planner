@@ -1,0 +1,26 @@
+{
+  "name": "life-is-hard-planner",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "yarn workspace @lifeos/web dev & yarn workspace @lifeos/api dev",
+    "build": "yarn workspace @lifeos/web build & yarn workspace @lifeos/api build",
+    "start": "yarn workspace @lifeos/api start",
+    "db:generate": "yarn workspace @lifeos/api prisma generate",
+    "db:push": "yarn workspace @lifeos/api prisma db push",
+    "db:migrate": "yarn workspace @lifeos/api prisma migrate dev",
+    "test": "yarn workspaces foreach run test",
+    "lint": "yarn workspaces foreach run lint"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "packageManager": "yarn@1.22.0"
+}
