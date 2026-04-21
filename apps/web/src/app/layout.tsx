@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import '@/styles/globals.css'
 
 export const metadata: Metadata = {
   title: 'LifeOS - Principle-Based Planning',
@@ -11,7 +12,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" data-theme="default">
       <body>{children}</body>
     </html>
   )

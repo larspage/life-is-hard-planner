@@ -18,3 +18,6 @@
 - 2026-04-21T00:00:00Z [add]: Goals CRUD API with auth protection
 - 2026-04-21T00:00:00Z [add]: Tasks CRUD + split/migrate with auth protection
 - 2026-04-21T00:00:00Z [add]: TimeBlocks CRUD with auth protection
+- 2026-04-21T00:00:00Z [add]: Theme system with 6 themes (default, forest, ocean, sunset, midnight, lavender)
+- 2026-04-21T00:00:00Z [add]: Theme selector component
+- 2026-04-21T00:00:00Z [add]: New warm cozy landing page UI

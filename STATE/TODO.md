@@ -6,12 +6,20 @@
 
 ## Active
 
-- [ ] Port management system (rundev.sh)
+- [ ] Build frontend UI
 
 ### Phase 2 Complete
 - [x] Auth middleware
 - [x] Protected routes
 - [x] CRUD APIs
+- [x] rundev.sh
+- [x] Port management
+
+### Frontend (Phase 3) - IN PROGRESS
+- [x] Theme system with CSS variables
+- [x] 6 theme options (default, forest, ocean, sunset, midnight, lavender)
+- [x] Theme selector component
+- [x] New warm cozy landing page
 
 ## Backlog
 

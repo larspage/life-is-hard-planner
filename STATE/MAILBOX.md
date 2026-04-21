@@ -17,15 +17,15 @@
 
 ## Open Items
 
-- Complete remaining API routes (roles, values, goals, tasks, timeblocks)
-- Build frontend components
-- Add auth middleware to protect routes
+- Build frontend with theme selector
 - Integrate frontend with backend
+- Weekly planner component
+- Daily timeline component
 
 ---
 
 ## Done
 
-- 2026-04-21T00:00:00Z [state]: Session ended - user starting new session
-
+- 2026-04-21T00:00:00Z [phase]: Auth + CRUD APIs complete
+- 2026-04-21T00:00:00Z [phase]: Theme system implemented with 6 themes
 - 2026-04-21T00:00:00Z [cleanup]: Created STATE files for proper tracking
