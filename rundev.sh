@@ -87,21 +87,30 @@ node_modules/.bin/tsx src/index.ts &
 API_PID=$!
 cd ../..
 
+# Start Web (Next.js) on unique port
+echo "Starting Web (Next.js) on port $WEB_PORT..."
+cd apps/web
+PORT=$WEB_PORT \
+NEXT_PUBLIC_API_URL="http://localhost:$API_PORT" \
+node_modules/.bin/next dev -p $WEB_PORT &
+WEB_PID=$!
+cd ../..
+
 echo ""
 echo "=========================================="
 echo "  Services Starting..."
 echo "=========================================="
 echo ""
 echo "  📡  API:      http://localhost:$API_PORT"
-echo "  🌐  Web:     http://localhost:$WEB_PORT (not started)"
+echo "  🌐  Web:      http://localhost:$WEB_PORT"
 echo "  📊  Grafana: http://localhost:$GRAFANA_PORT (admin/admin)"
 echo "  📝  Loki:    http://localhost:$LOKI_PORT"
 echo ""
-echo "  Press Ctrl+C to stop"
+echo "  Press Ctrl+C to stop all services"
 echo ""
 
-# Wait for API to start
-sleep 3
+# Wait for services to start
+sleep 5
 
 # Test API
 if curl -s http://localhost:$API_PORT/api/health > /dev/null 2>&1; then
@@ -110,10 +119,25 @@ else
     echo "⚠️  API may still be starting..."
 fi
 
+# Test Web
+if curl -s http://localhost:$WEB_PORT > /dev/null 2>&1; then
+    echo "✅ Web is running!"
+else
+    echo "⚠️  Web may still be starting..."
+fi
+
 echo ""
 echo "=========================================="
 echo "  Ready for development!"
 echo "=========================================="
 
-# Keep script running
-wait $API_PID
+# Keep script running (both API and Web)
+cleanup() {
+    echo ""
+    echo "Shutting down..."
+    kill $API_PID $WEB_PID 2>/dev/null
+    exit 0
+}
+trap cleanup SIGINT SIGTERM
+
+wait $API_PID $WEB_PID
