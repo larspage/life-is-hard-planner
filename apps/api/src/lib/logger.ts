@@ -4,22 +4,12 @@ import Loki from 'winston-loki'
 const lokiUrl = process.env.LOKI_URL || 'http://localhost:3100'
 const logLevel = process.env.LOG_LEVEL || 'info'
 
-// Define log levels with numeric priorities
-const levels = {
-  error: 0,
-  warn: 1,
-  performance: 2,
-  information: 3,
-  info: 3,
-  debug: 4,
-}
-
 /**
  * Create Winston logger with Loki transport for centralized logging
- * Supports: error, warn, performance, information, debug levels
+ * Supports standard levels: error, warn, info, debug
+ * Custom: performance (mapped to info)
  */
 export const logger = winston.createLogger({
-  levels,
   level: logLevel,
   format: winston.format.combine(
     winston.format.timestamp(),
@@ -64,6 +54,7 @@ export function createLogger(context: Record<string, unknown>) {
 
 /**
  * Log performance metrics (duration in ms)
+ * Uses info level with duration_ms for filtering
  */
 export function logPerformance({
   endpoint,
@@ -76,11 +67,12 @@ export function logPerformance({
   duration_ms: number
   correlationId?: string
 }) {
-  logger.performance(`${method} ${endpoint}`, {
+  logger.info(`${method} ${endpoint} completed`, {
     endpoint,
     method,
     duration_ms,
     correlationId,
+    level: 'performance',
   })
 }
 
@@ -88,7 +80,7 @@ export function logPerformance({
  * Log information (startup, CRUD operations, user actions)
  */
 export function logInformation(message: string, meta?: Record<string, unknown>) {
-  logger.information(message, meta)
+  logger.info(message, meta)
 }
 
 /**

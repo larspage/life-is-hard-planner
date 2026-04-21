@@ -1,9 +1,8 @@
 import express, { Request, Response, NextFunction } from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
-import morgan from 'morgan'
 import { PrismaClient } from '@prisma/client'
-import logger, { logInformation, logError } from './lib/logger'
+import { logger, logInformation, logError } from './lib/logger'
 
 // Initialize Prisma client
 export const prisma = new PrismaClient()
@@ -85,7 +84,7 @@ async function start() {
       logInformation('Server started', { port: PORT, component: 'express' })
     })
   } catch (error) {
-    logError('Failed to start server', { error: String(error) })
+    console.error('Failed to start server:', error)
     process.exit(1)
   }
 }
