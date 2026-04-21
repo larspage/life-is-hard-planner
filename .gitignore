@@ -34,3 +34,6 @@ logs/
 # Prisma
 apps/api/prisma/*.db
 apps/api/prisma/migrations/
+
+# Project ports (auto-generated, per-machine)
+.project-ports

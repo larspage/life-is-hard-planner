@@ -6,7 +6,12 @@
 
 ## Active
 
-- [ ] Verify protected endpoints work
+- [ ] Port management system (rundev.sh)
+
+### Phase 2 Complete
+- [x] Auth middleware
+- [x] Protected routes
+- [x] CRUD APIs
 
 ## Backlog
 
