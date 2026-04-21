@@ -12,3 +12,9 @@
 - 2026-04-21T00:00:00Z [fix]: Winston logger custom levels fixed
 - 2026-04-21T00:00:00Z [verify]: API starts, logs flow to Loki
 - 2026-04-21T00:00:00Z [fix]: Added Moe STATE files (CHANGELOG, MAILBOX, TODO) - was missing from initial setup
+- 2026-04-21T00:00:00Z [add]: Auth middleware (authenticate, optionalAuth)
+- 2026-04-21T00:00:00Z [add]: Roles CRUD API with auth protection
+- 2026-04-21T00:00:00Z [add]: Values CRUD API with auth protection
+- 2026-04-21T00:00:00Z [add]: Goals CRUD API with auth protection
+- 2026-04-21T00:00:00Z [add]: Tasks CRUD + split/migrate with auth protection
+- 2026-04-21T00:00:00Z [add]: TimeBlocks CRUD with auth protection

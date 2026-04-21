@@ -6,14 +6,14 @@
 
 ## Active
 
-- [ ] Continue building MVP features
+- [ ] Verify protected endpoints work
 
 ## Backlog
 
-### Auth (Phase 2)
-- [ ] Complete auth middleware
-- [ ] Protect API routes
-- [ ] Implement mock auth fully
+### Auth (Phase 2) - DONE
+- [x] Complete auth middleware
+- [x] Protect API routes
+- [x] Implement mock auth fully
 
 ### Identity Layer (Phase 3)
 - [ ] Roles CRUD API

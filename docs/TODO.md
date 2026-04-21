@@ -1,4 +1,6 @@
-# LifeOS — Project Todos
+# LifeOS — Project Planning
+
+> This is a **planning** document. For active tracking, see STATE/TODO.md.
 
 ## Status: Planning
 
