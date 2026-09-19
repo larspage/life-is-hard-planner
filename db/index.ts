@@ -1,4 +1,5 @@
 import { drizzle } from "drizzle-orm/postgres-js";
+import { sql } from "drizzle-orm";
 import postgres from "postgres";
 import * as schema from "./schema";
 
@@ -9,6 +10,8 @@ declare global {
   var __lifeosDb: DrizzleDatabase | undefined;
   // eslint-disable-next-line no-var
   var __lifeosSql: ReturnType<typeof postgres> | undefined;
+  // eslint-disable-next-line no-var
+  var __lifeosUserId: string | undefined;
 }
 
 function initializeDb(): DrizzleDatabase {
@@ -39,6 +42,13 @@ function getDb(): DrizzleDatabase {
  *
  * In tests, `vi.mock('@/db', () => ({ db: mockDb }))` replaces this entire
  * module, so the proxy is never constructed.
+ *
+ * Per ADR-008: every transaction must run with `app.user_id` set so RLS
+ * policies can filter by user. The application code calls
+ * `withUserContext(userId, async () => { ... queries ... })` from inside
+ * route handlers after `requireUserId()`. The GUC is set via `SET LOCAL`
+ * inside a transaction, so it scopes to that transaction only and is
+ * discarded after commit.
  */
 export const db: DrizzleDatabase = new Proxy({} as DrizzleDatabase, {
   get(_target, prop) {
@@ -47,6 +57,30 @@ export const db: DrizzleDatabase = new Proxy({} as DrizzleDatabase, {
     return typeof value === "function" ? value.bind(real) : value;
   },
 });
+
+/**
+ * Run a callback inside a transaction with `app.user_id` set to the
+ * caller's user id. RLS policies read from this GUC; without it, every
+ * query against a user-owned table returns zero rows.
+ *
+ * Usage:
+ *   const rows = await withUserContext(userId, async (tx) => {
+ *     return tx.select().from(roles).where(eq(roles.userId, userId)).execute();
+ *   });
+ *
+ * The callback receives the transaction handle; queries must run against
+ * that handle (not the top-level `db`) so the GUC scopes correctly.
+ */
+export async function withUserContext<T>(
+  userId: string,
+  fn: (tx: DrizzleDatabase) => Promise<T>,
+): Promise<T> {
+  const real = getDb();
+  return real.transaction(async (tx) => {
+    await tx.execute(sql`SET LOCAL app.user_id = ${userId}`);
+    return fn(tx);
+  });
+}
 
 export async function closeDb(): Promise<void> {
   const sql = globalThis.__lifeosSql;

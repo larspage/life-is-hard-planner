@@ -34,6 +34,7 @@ import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { users } from "@/db/schema";
+import { AuthError } from "./errors";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
@@ -134,7 +135,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth(authConfig);
 export async function requireUserId(): Promise<string> {
   const session = await auth();
   if (!session?.user?.id) {
-    throw new Response("Unauthorized", { status: 401 });
+    throw new AuthError("Sign in to perform this action");
   }
   return session.user.id;
 }
