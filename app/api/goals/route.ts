@@ -1,39 +1,45 @@
-import { and, asc, eq } from "drizzle-orm";
-import { db } from "@/db";
+import { asc, eq } from "drizzle-orm";
+import { withUserContext } from "@/db";
 import { goals } from "@/db/schema";
 import { requireUserId } from "@/lib/auth";
-import { badRequest, ok, serverError } from "@/lib/api";
+import { ok } from "@/lib/api";
+import { InternalError, ValidationError, withErrorHandling } from "@/lib/errors";
 import { goalSchema } from "@/lib/validation";
 
-export async function GET(): Promise<Response> {
-  try {
-    const userId = await requireUserId();
-    const rows = await db
+export const GET = withErrorHandling(async () => {
+  const userId = await requireUserId();
+  return withUserContext(userId, async (tx) => {
+    const rows = await tx
       .select()
       .from(goals)
       .where(eq(goals.userId, userId))
       .orderBy(asc(goals.createdAt));
     return ok(rows);
-  } catch (err) {
-    if (err instanceof Response) return err;
-    return serverError(err);
-  }
-}
+  });
+});
 
-export async function POST(req: Request): Promise<Response> {
-  try {
-    const userId = await requireUserId();
-    const body = await req.json().catch(() => null);
-    const parsed = goalSchema.safeParse(body);
-    if (!parsed.success) return badRequest(parsed.error.flatten());
-    const [row] = await db
+export const POST = withErrorHandling(async (req: Request) => {
+  const userId = await requireUserId();
+  const body = await req.json().catch(() => null);
+  const parsed = goalSchema.safeParse(body);
+  if (!parsed.success) {
+    return Response.json(
+      {
+        error: {
+          code: "bad_request",
+          message: "Request body did not validate",
+          details: parsed.error.flatten(),
+        },
+      },
+      { status: 400 },
+    );
+  }
+  return withUserContext(userId, async (tx) => {
+    const [row] = await tx
       .insert(goals)
       .values({ ...parsed.data, userId })
       .returning();
-    if (!row) return serverError(new Error("Insert returned no row"));
+    if (!row) throw new InternalError("Insert returned no row");
     return ok(row, { status: 201 });
-  } catch (err) {
-    if (err instanceof Response) return err;
-    return serverError(err);
-  }
-}
+  });
+});

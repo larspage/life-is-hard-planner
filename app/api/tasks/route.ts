@@ -1,18 +1,19 @@
 import { and, asc, eq } from "drizzle-orm";
-import { db } from "@/db";
+import { withUserContext } from "@/db";
 import { tasks } from "@/db/schema";
 import { requireUserId } from "@/lib/auth";
-import { badRequest, ok, serverError } from "@/lib/api";
+import { ok } from "@/lib/api";
+import { InternalError, ValidationError, withErrorHandling } from "@/lib/errors";
 import { taskSchema } from "@/lib/validation";
 
-export async function GET(req: Request): Promise<Response> {
-  try {
-    const userId = await requireUserId();
-    const url = new URL(req.url);
-    const status = url.searchParams.get("status");
-    const roleId = url.searchParams.get("roleId");
-    const quadrant = url.searchParams.get("quadrant");
+export const GET = withErrorHandling(async (req: Request) => {
+  const userId = await requireUserId();
+  const url = new URL(req.url);
+  const status = url.searchParams.get("status");
+  const roleId = url.searchParams.get("roleId");
+  const quadrant = url.searchParams.get("quadrant");
 
+  return withUserContext(userId, async (tx) => {
     const filters = [eq(tasks.userId, userId)];
     if (
       status === "TODO" ||
@@ -32,32 +33,37 @@ export async function GET(req: Request): Promise<Response> {
       filters.push(eq(tasks.quadrant, quadrant));
     }
 
-    const rows = await db
+    const rows = await tx
       .select()
       .from(tasks)
       .where(and(...filters))
       .orderBy(asc(tasks.createdAt));
     return ok(rows);
-  } catch (err) {
-    if (err instanceof Response) return err;
-    return serverError(err);
-  }
-}
+  });
+});
 
-export async function POST(req: Request): Promise<Response> {
-  try {
-    const userId = await requireUserId();
-    const body = await req.json().catch(() => null);
-    const parsed = taskSchema.safeParse(body);
-    if (!parsed.success) return badRequest(parsed.error.flatten());
-    const [row] = await db
+export const POST = withErrorHandling(async (req: Request) => {
+  const userId = await requireUserId();
+  const body = await req.json().catch(() => null);
+  const parsed = taskSchema.safeParse(body);
+  if (!parsed.success) {
+    return Response.json(
+      {
+        error: {
+          code: "bad_request",
+          message: "Request body did not validate",
+          details: parsed.error.flatten(),
+        },
+      },
+      { status: 400 },
+    );
+  }
+  return withUserContext(userId, async (tx) => {
+    const [row] = await tx
       .insert(tasks)
       .values({ ...parsed.data, userId })
       .returning();
-    if (!row) return serverError(new Error("Insert returned no row"));
+    if (!row) throw new InternalError("Insert returned no row");
     return ok(row, { status: 201 });
-  } catch (err) {
-    if (err instanceof Response) return err;
-    return serverError(err);
-  }
-}
+  });
+});
