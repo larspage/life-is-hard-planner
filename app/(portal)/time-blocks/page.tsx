@@ -1,5 +1,5 @@
 import { and, asc, eq, gte, lt } from "drizzle-orm";
-import { db } from "@/db";
+import { withUserContext } from "@/db";
 import { timeBlocks, tasks } from "@/db/schema";
 import { requireUserId } from "@/lib/auth";
 
@@ -29,24 +29,26 @@ export default async function TimeBlocksPage({
   const end = new Date(start);
   end.setUTCDate(end.getUTCDate() + 1);
 
-  const rows = await db
-    .select({
-      id: timeBlocks.id,
-      startTime: timeBlocks.startTime,
-      endTime: timeBlocks.endTime,
-      taskTitle: tasks.title,
-      taskQuadrant: tasks.quadrant,
-    })
-    .from(timeBlocks)
-    .leftJoin(tasks, eq(timeBlocks.taskId, tasks.id))
-    .where(
-      and(
-        eq(timeBlocks.userId, userId),
-        gte(timeBlocks.startTime, start),
-        lt(timeBlocks.startTime, end),
-      ),
-    )
-    .orderBy(asc(timeBlocks.startTime));
+  const rows = await withUserContext(userId, async (tx) => {
+    return tx
+      .select({
+        id: timeBlocks.id,
+        startTime: timeBlocks.startTime,
+        endTime: timeBlocks.endTime,
+        taskTitle: tasks.title,
+        taskQuadrant: tasks.quadrant,
+      })
+      .from(timeBlocks)
+      .leftJoin(tasks, eq(timeBlocks.taskId, tasks.id))
+      .where(
+        and(
+          eq(timeBlocks.userId, userId),
+          gte(timeBlocks.startTime, start),
+          lt(timeBlocks.startTime, end),
+        ),
+      )
+      .orderBy(asc(timeBlocks.startTime));
+  });
 
   const dateIso = date.toISOString().slice(0, 10);
 

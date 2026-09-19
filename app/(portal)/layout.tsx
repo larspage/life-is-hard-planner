@@ -8,10 +8,14 @@ import styles from "./portal.module.css";
  * Portal route group layout. Wraps every page under (portal) with:
  *   - Auth check: middleware already protects, but we double-check here so
  *     session-not-found degrades to /login via redirect.
- *   - Top nav with the four core resources + sign-out.
+ *   - Top nav with the core resources + sign-out.
  *
  * The middleware matcher in /middleware.ts excludes `/login` and the API
  * routes, so unauthenticated users bounce to /login before this layout runs.
+ *
+ * Per SPEC §Identity Layer: Roles, Values, Goals, Tasks, Time Blocks all
+ * ship in v0.2.0-alpha. Roles and Values are read-only lists for now; CRUD
+ * UI for those lands in beta per the release strategy (ADR-010).
  */
 export default async function PortalLayout({
   children,
@@ -35,6 +39,12 @@ export default async function PortalLayout({
         <nav className={styles.nav}>
           <Link className={styles.navLink} href="/">
             Dashboard
+          </Link>
+          <Link className={styles.navLink} href="/roles">
+            Roles
+          </Link>
+          <Link className={styles.navLink} href="/values">
+            Values
           </Link>
           <Link className={styles.navLink} href="/goals">
             Goals

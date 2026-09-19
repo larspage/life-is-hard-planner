@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { and, eq, gte, lt } from "drizzle-orm";
-import { db } from "@/db";
+import { withUserContext } from "@/db";
 import { roles, goals, tasks, timeBlocks } from "@/db/schema";
 import { requireUserId } from "@/lib/auth";
-import styles from "./portal.module.css";
 
 export const metadata = { title: "Dashboard — LifeOS" };
 
@@ -15,34 +14,44 @@ export default async function DashboardPage() {
   const end = new Date(start);
   end.setUTCDate(end.getUTCDate() + 1);
 
-  const [roleCount, goalCount, taskCount, todayBlocks] = await Promise.all([
-    db
-      .select({ id: roles.id })
-      .from(roles)
-      .where(eq(roles.userId, userId))
-      .then((r) => r.length),
-    db
-      .select({ id: goals.id })
-      .from(goals)
-      .where(and(eq(goals.userId, userId), eq(goals.status, "ACTIVE")))
-      .then((r) => r.length),
-    db
-      .select({ id: tasks.id })
-      .from(tasks)
-      .where(and(eq(tasks.userId, userId), eq(tasks.status, "TODO")))
-      .then((r) => r.length),
-    db
-      .select({ id: timeBlocks.id })
-      .from(timeBlocks)
-      .where(
-        and(
-          eq(timeBlocks.userId, userId),
-          gte(timeBlocks.startTime, start),
-          lt(timeBlocks.startTime, end),
-        ),
-      )
-      .then((r) => r.length),
-  ]);
+  const counts = await withUserContext(userId, async (tx) => {
+    const [roleRows, goalRows, taskRows, blockRows] = await Promise.all([
+      tx
+        .select({ id: roles.id })
+        .from(roles)
+        .where(eq(roles.userId, userId))
+        .then((r) => r.length),
+      tx
+        .select({ id: goals.id })
+        .from(goals)
+        .where(and(eq(goals.userId, userId), eq(goals.status, "ACTIVE")))
+        .then((r) => r.length),
+      tx
+        .select({ id: tasks.id })
+        .from(tasks)
+        .where(and(eq(tasks.userId, userId), eq(tasks.status, "TODO")))
+        .then((r) => r.length),
+      tx
+        .select({ id: timeBlocks.id })
+        .from(timeBlocks)
+        .where(
+          and(
+            eq(timeBlocks.userId, userId),
+            gte(timeBlocks.startTime, start),
+            lt(timeBlocks.startTime, end),
+          ),
+        )
+        .then((r) => r.length),
+    ]);
+    return {
+      roleCount: roleRows,
+      goalCount: goalRows,
+      taskCount: taskRows,
+      todayBlocks: blockRows,
+    };
+  });
+
+  const { roleCount, goalCount, taskCount, todayBlocks } = counts;
 
   return (
     <div className="stack stack--lg">

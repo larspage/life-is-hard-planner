@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { asc, eq } from "drizzle-orm";
-import { db } from "@/db";
+import { withUserContext } from "@/db";
 import { goals, roles } from "@/db/schema";
 import { requireUserId } from "@/lib/auth";
 
@@ -8,21 +8,23 @@ export const metadata = { title: "Goals — LifeOS" };
 
 export default async function GoalsPage() {
   const userId = await requireUserId();
-  const rows = await db
-    .select({
-      id: goals.id,
-      title: goals.title,
-      description: goals.description,
-      horizon: goals.horizon,
-      status: goals.status,
-      targetDate: goals.targetDate,
-      roleId: goals.roleId,
-      roleName: roles.name,
-    })
-    .from(goals)
-    .leftJoin(roles, eq(goals.roleId, roles.id))
-    .where(eq(goals.userId, userId))
-    .orderBy(asc(goals.createdAt));
+  const rows = await withUserContext(userId, async (tx) => {
+    return tx
+      .select({
+        id: goals.id,
+        title: goals.title,
+        description: goals.description,
+        horizon: goals.horizon,
+        status: goals.status,
+        targetDate: goals.targetDate,
+        roleId: goals.roleId,
+        roleName: roles.name,
+      })
+      .from(goals)
+      .leftJoin(roles, eq(goals.roleId, roles.id))
+      .where(eq(goals.userId, userId))
+      .orderBy(asc(goals.createdAt));
+  });
 
   if (rows.length === 0) {
     return (

@@ -1,5 +1,5 @@
 import { and, asc, eq } from "drizzle-orm";
-import { db } from "@/db";
+import { withUserContext } from "@/db";
 import { tasks, roles, goals } from "@/db/schema";
 import { requireUserId } from "@/lib/auth";
 
@@ -7,23 +7,25 @@ export const metadata = { title: "Tasks — LifeOS" };
 
 export default async function TasksPage() {
   const userId = await requireUserId();
-  const rows = await db
-    .select({
-      id: tasks.id,
-      title: tasks.title,
-      description: tasks.description,
-      duration: tasks.duration,
-      quadrant: tasks.quadrant,
-      status: tasks.status,
-      priorityType: tasks.priorityType,
-      roleName: roles.name,
-      goalTitle: goals.title,
-    })
-    .from(tasks)
-    .leftJoin(roles, eq(tasks.roleId, roles.id))
-    .leftJoin(goals, eq(tasks.goalId, goals.id))
-    .where(eq(tasks.userId, userId))
-    .orderBy(asc(tasks.createdAt));
+  const rows = await withUserContext(userId, async (tx) => {
+    return tx
+      .select({
+        id: tasks.id,
+        title: tasks.title,
+        description: tasks.description,
+        duration: tasks.duration,
+        quadrant: tasks.quadrant,
+        status: tasks.status,
+        priorityType: tasks.priorityType,
+        roleName: roles.name,
+        goalTitle: goals.title,
+      })
+      .from(tasks)
+      .leftJoin(roles, eq(tasks.roleId, roles.id))
+      .leftJoin(goals, eq(tasks.goalId, goals.id))
+      .where(eq(tasks.userId, userId))
+      .orderBy(asc(tasks.createdAt));
+  });
 
   if (rows.length === 0) {
     return (
