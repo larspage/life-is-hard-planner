@@ -4,13 +4,19 @@ node_modules/
 .pnp.js
 
 # Build
-dist/
 .next/
+out/
 build/
+dist/
+*.tsbuildinfo
+
+# Test
+coverage/
 
 # Environment
 .env
 .env.local
+.env*.local
 
 # IDE
 .vscode/
@@ -31,9 +37,11 @@ logs/
 *.seed
 *.pid.lock
 
-# Prisma
-apps/api/prisma/*.db
-apps/api/prisma/migrations/
+# Drizzle local journal
+db/migrations/meta/
 
-# Project ports (auto-generated, per-machine)
-.project-ports
+# Per-project opencode artifacts (teamchat operational debris)
+.opencode/teamchats/
+
+# Auth (NextAuth generates JWTs at runtime; never commit the secret)
+.next-auth/

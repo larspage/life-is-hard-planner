@@ -1,0 +1,80 @@
+.shell {
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 18px 28px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+}
+
+.brandLink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+.brandMark {
+  color: var(--accent-primary);
+}
+
+.nav {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+}
+
+.navLink {
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  transition: background var(--transition-fast);
+}
+
+.navLink:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.userBlock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.userEmail {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 36px 28px 64px;
+}
+
+@media (max-width: 720px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .nav {
+    flex-wrap: wrap;
+  }
+}

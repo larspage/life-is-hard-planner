@@ -1,26 +1,61 @@
 {
-  "name": "life-is-hard-planner",
-  "version": "0.1.0",
+  "name": "lifeos",
+  "version": "0.2.0",
   "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "dev": "yarn workspace @lifeos/web dev & yarn workspace @lifeos/api dev",
-    "build": "yarn workspace @lifeos/web build & yarn workspace @lifeos/api build",
-    "start": "yarn workspace @lifeos/api start",
-    "db:generate": "yarn workspace @lifeos/api prisma generate",
-    "db:push": "yarn workspace @lifeos/api prisma db push",
-    "db:migrate": "yarn workspace @lifeos/api prisma migrate dev",
-    "test": "yarn workspaces foreach run test",
-    "lint": "yarn workspaces foreach run lint"
+    "dev": "next dev -p ${PORT:-3042}",
+    "build": "next build",
+    "start": "next start -p ${PORT:-3042}",
+    "lint": "next lint --max-warnings 0",
+    "lint:fix": "next lint --fix",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "echo \"e2e not implemented yet\" && exit 0",
+    "db:generate": "dotenv -e .env.local -- drizzle-kit generate",
+    "db:migrate": "dotenv -e .env.local -- drizzle-kit migrate",
+    "db:studio": "dotenv -e .env.local -- drizzle-kit studio",
+    "seed": "tsx scripts/seed.ts",
+    "local:up": "scripts/local-up.sh",
+    "local:down": "scripts/local-down.sh",
+    "local:reset": "scripts/local-reset.sh",
+    "ci": "npm run typecheck && npm run lint && npm run test"
+  },
+  "dependencies": {
+    "@auth/drizzle-adapter": "^1.7.4",
+    "@sentry/nextjs": "^7.100.0",
+    "bcryptjs": "^2.4.3",
+    "clsx": "^2.1.1",
+    "drizzle-orm": "^0.33.0",
+    "next": "^14.2.0",
+    "next-auth": "^4.24.0",
+    "postgres": "^3.4.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "tailwind-merge": "^2.5.4",
+    "zod": "^3.23.0"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "packageManager": "yarn@1.22.0"
+    "@testing-library/jest-dom": "^6.4.0",
+    "@testing-library/react": "^16.0.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "@vitest/coverage-v8": "^1.6.0",
+    "drizzle-kit": "^0.24.0",
+    "dotenv-cli": "^7.4.0",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.0",
+    "jsdom": "^24.0.0",
+    "prettier": "^3.3.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0",
+    "vitest": "^1.6.0"
+  }
 }
