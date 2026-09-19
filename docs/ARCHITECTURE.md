@@ -426,19 +426,51 @@ app.user_id` so policies can compare against the calling user.
 
 ### ADR-009: Custom error class hierarchy (replaces `throw new Response(...)`)
 
-- **Status**: Accepted (2026-09-19)
+- **Status**: Accepted (2026-09-19, refined 2026-09-19)
 - **Context**: `lib/auth.ts:137` throws a `Response` object, and every route
   handler must remember `if (err instanceof Response) return err` to recover
   it. `lib/api.ts:42-45` has the same shape with `serverError`. One handler
   that forgets the check swallows the 401 and returns a 500. The pattern is
   unidiomatic and easy to break. Mirrors the C# `Exception` model that the
   owner prefers.
-- **Decision**: A typed `AppError` base class + subclasses (`AuthError`,
-  `ValidationError`, `NotFoundError`, `ConflictError`, `InternalError`).
-  Each subclass carries an HTTP status code and a stable error code string.
-  A single `errorToResponse(err: unknown): Response` mapper in `lib/errors.ts`
-  turns any thrown value into a typed JSON response using `lib/api.ts`
-  helpers.
+- **Decision**: A typed `AppError` base class with narrow subclasses. Each
+  subclass carries an HTTP status code (per RFC 9110, the IANA-registered
+  list) and a stable error code string. A single `errorToResponse(err:
+unknown): Response` mapper in `lib/errors.ts` turns any thrown value into
+  a typed JSON response using `lib/api.ts` helpers.
+
+  **The hierarchy** (4xx first, then 5xx):
+
+  | Class                     | Status                    | Code                  | When                                                             |
+  | ------------------------- | ------------------------- | --------------------- | ---------------------------------------------------------------- |
+  | `AuthError`               | 401 Unauthorized          | `unauthorized`        | no session / bad session                                         |
+  | `ForbiddenError`          | 403 Forbidden             | `forbidden`           | session valid, can't access (RLS denies, role check fails)       |
+  | `InvalidParameterError`   | 400 Bad Request           | `invalid_parameter`   | malformed body from a non-form caller                            |
+  | `UnprocessableError`      | 422 Unprocessable Content | `unprocessable`       | body parsed, business rule failed (form should have caught this) |
+  | `PayloadTooLargeError`    | 413 Content Too Large     | `payload_too_large`   | body too big (future)                                            |
+  | `RateLimitedError`        | 429 Too Many Requests     | `rate_limited`        | rate limit hit (future)                                          |
+  | `NotFoundError`           | 404 Not Found             | `not_found`           | no row                                                           |
+  | `ConflictError`           | 409 Conflict              | `conflict`            | unique violation, optimistic-lock loss                           |
+  | `MethodNotAllowedError`   | 405 Method Not Allowed    | `method_not_allowed`  | wrong HTTP verb                                                  |
+  | `InternalError`           | 500 Internal Server Error | `server_error`        | anything else                                                    |
+  | `NotImplementedError`     | 501 Not Implemented       | `not_implemented`     | endpoint exists in spec but not yet built                        |
+  | `ServiceUnavailableError` | 503 Service Unavailable   | `service_unavailable` | db down, etc. (future)                                           |
+
+  **The 400 vs 422 split** matters because form validation lives on the
+  client, not the server:
+  - **400** is for "I can't parse this." The form should prevent this
+    (field-level checks, type/range validation). The server only fires
+    400 when a non-form caller (curl, replay, bad client) sends garbage.
+  - **422** is for "I parsed it fine, but the result violates a business
+    rule" — e.g. endTime ≤ startTime. The form _should_ check this
+    before submit; if it lets it through, the server returns 422.
+
+  Form validation itself (`required`, `regex`, `maxLength`) is **not** an
+  error — it's a client-side function that highlights fields and blocks
+  submission. The server never sees it. When the CRUD UI lands in beta
+  per ADR-010, `lib/forms.ts` will hold these as plain functions
+  returning `{ ok: boolean, fieldErrors: Record<string, string> }`.
+
 - **Consequences**:
   - `requireUserId()` throws `AuthError`, not `Response`.
   - Route handler bodies become:
@@ -451,6 +483,9 @@ app.user_id` so policies can compare against the calling user.
       return errorToResponse(err);
     }
     ```
+  - `withErrorHandling(handler)` wraps a handler so the try/catch is
+    implicit. The handler can throw any `AppError` and the wrapper maps
+    it.
   - The mapper is testable in isolation; coverage gate easier to hit.
   - `lib/api.ts` keeps the `ok` / `fail` helpers but the route layer no
     longer constructs `fail` directly — it throws typed errors.

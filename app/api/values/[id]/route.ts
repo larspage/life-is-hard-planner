@@ -3,7 +3,7 @@ import { withUserContext } from "@/db";
 import { values } from "@/db/schema";
 import { requireUserId } from "@/lib/auth";
 import { notFound, ok } from "@/lib/api";
-import { InternalError, ValidationError, withErrorHandling } from "@/lib/errors";
+import { InternalError, InvalidParameterError, withErrorHandling } from "@/lib/errors";
 import { valueSchema } from "@/lib/validation";
 
 export const GET = withErrorHandling(

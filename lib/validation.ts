@@ -53,17 +53,17 @@ export const taskSchema = z.object({
   parentTaskId: z.string().uuid().optional(),
 });
 
-export const timeBlockSchema = z
-  .object({
-    taskId: z.string().uuid(),
-    startTime: z.coerce.date(),
-    endTime: z.coerce.date(),
-    date: z.coerce.date(),
-  })
-  .refine((v) => v.endTime.getTime() > v.startTime.getTime(), {
-    message: "endTime must be after startTime",
-    path: ["endTime"],
-  });
+export const timeBlockSchema = z.object({
+  taskId: z.string().uuid(),
+  startTime: z.coerce.date(),
+  endTime: z.coerce.date(),
+  date: z.coerce.date(),
+});
+// Business rule (endTime > startTime) is checked explicitly in the route
+// handler after parsing, so failures surface as 422 Unprocessable rather
+// than 400 Invalid Parameter. The form should also check this before
+// submit so the server only fires it when a non-form caller lets it
+// through.
 
 export const idSchema = z.object({
   id: z.string().uuid(),

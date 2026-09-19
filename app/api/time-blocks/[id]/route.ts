@@ -5,10 +5,10 @@ import { requireUserId } from "@/lib/auth";
 import { notFound, ok } from "@/lib/api";
 import {
   InternalError,
-  ValidationError,
+  InvalidParameterError,
+  UnprocessableError,
   withErrorHandling,
 } from "@/lib/errors";
-import { timeBlockSchema } from "@/lib/validation";
 import { z } from "zod";
 
 export const GET = withErrorHandling(
@@ -30,10 +30,6 @@ export const PATCH = withErrorHandling(
   async (req: Request, { params }: { params: { id: string } }) => {
     const userId = await requireUserId();
     const body = await req.json().catch(() => null);
-    // timeBlockSchema has a .refine() so it's ZodEffects, not ZodObject; no .partial().
-    // For PATCH we want all fields optional and skip the refine check (since the
-    // caller may update only one of startTime/endTime). Validate with the base
-    // shape and skip the cross-field check on partial updates.
     const parsed = z
       .object({
         taskId: z.string().uuid().optional(),
@@ -43,18 +39,41 @@ export const PATCH = withErrorHandling(
       })
       .safeParse(body);
     if (!parsed.success) {
-      return Response.json(
-        {
-          error: {
-            code: "bad_request",
-            message: "Request body did not validate",
-            details: parsed.error.flatten(),
-          },
-        },
-        { status: 400 },
+      throw new InvalidParameterError(
+        "Request body did not validate",
+        parsed.error.flatten(),
       );
     }
     return withUserContext(userId, async (tx) => {
+      // Business rule: endTime must be after startTime in the resulting row.
+      // If both are present in the patch, check them directly. If only one
+      // is present, fetch the existing row and check the combined result.
+      const startTime = parsed.data.startTime;
+      const endTime = parsed.data.endTime;
+      if (startTime && endTime) {
+        if (endTime.getTime() <= startTime.getTime()) {
+          throw new UnprocessableError("endTime must be after startTime", {
+            endTime: "must be after startTime",
+          });
+        }
+      } else if (startTime || endTime) {
+        const [existing] = await tx
+          .select()
+          .from(timeBlocks)
+          .where(
+            and(eq(timeBlocks.id, params.id), eq(timeBlocks.userId, userId)),
+          )
+          .limit(1);
+        if (!existing) return notFound("TimeBlock");
+        const resultStart = startTime ?? existing.startTime;
+        const resultEnd = endTime ?? existing.endTime;
+        if (resultEnd.getTime() <= resultStart.getTime()) {
+          throw new UnprocessableError("endTime must be after startTime", {
+            endTime: "must be after startTime",
+          });
+        }
+      }
+
       const [row] = await tx
         .update(timeBlocks)
         .set(parsed.data)

@@ -75,14 +75,19 @@ describe("taskSchema", () => {
 });
 
 describe("timeBlockSchema", () => {
-  it("rejects endTime <= startTime", () => {
+  // The endTime > startTime business rule is intentionally NOT in this
+  // schema — it's an explicit check in the route handler so failures
+  // surface as 422 Unprocessable (not 400 Invalid Parameter). See
+  // ARCHITECTURE.md ADR-009 and app/api/time-blocks/route.ts.
+
+  it("parses a backward interval (rule check is route-level)", () => {
     const parsed = timeBlockSchema.safeParse({
       taskId: "11111111-1111-1111-1111-111111111111",
       startTime: "2026-09-16T10:00:00Z",
       endTime: "2026-09-16T09:00:00Z",
       date: "2026-09-16",
     });
-    expect(parsed.success).toBe(false);
+    expect(parsed.success).toBe(true);
   });
 
   it("accepts a forward interval", () => {

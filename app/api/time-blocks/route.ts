@@ -5,7 +5,8 @@ import { requireUserId } from "@/lib/auth";
 import { ok } from "@/lib/api";
 import {
   InternalError,
-  ValidationError,
+  InvalidParameterError,
+  UnprocessableError,
   withErrorHandling,
 } from "@/lib/errors";
 import { timeBlockSchema } from "@/lib/validation";
@@ -20,7 +21,7 @@ export const GET = withErrorHandling(async (req: Request) => {
     if (dateParam) {
       const date = new Date(dateParam);
       if (Number.isNaN(date.getTime())) {
-        throw new ValidationError("Invalid date parameter", {
+        throw new InvalidParameterError("Invalid date parameter", {
           date: "invalid date",
         });
       }
@@ -45,10 +46,17 @@ export const POST = withErrorHandling(async (req: Request) => {
   const body = await req.json().catch(() => null);
   const parsed = timeBlockSchema.safeParse(body);
   if (!parsed.success) {
-    throw new ValidationError(
+    throw new InvalidParameterError(
       "Request body did not validate",
       parsed.error.flatten(),
     );
+  }
+  // Business rule: endTime must be after startTime. The form should
+  // check this before submit; if it lets it through, 422.
+  if (parsed.data.endTime.getTime() <= parsed.data.startTime.getTime()) {
+    throw new UnprocessableError("endTime must be after startTime", {
+      endTime: "must be after startTime",
+    });
   }
   return withUserContext(userId, async (tx) => {
     const [row] = await tx

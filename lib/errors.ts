@@ -7,10 +7,27 @@
  * subclasses: one base, several narrow subclasses, each carrying the HTTP
  * status code and stable error code string.
  *
+ * Status codes per RFC 9110 (the IANA-registered list at
+ * https://en.wikipedia.org/wiki/List_of_HTTP_status_codes). Two important
+ * distinctions this hierarchy enforces:
+ *
+ *   400 Invalid Parameter  — caller sent a malformed body. The form should
+ *                            never let this happen; the server only fires
+ *                            it when a non-form caller (curl, replay, bad
+ *                            client) sends garbage.
+ *   422 Unprocessable      — body parsed fine, but a business rule failed
+ *                            (e.g. endTime <= startTime). The form should
+ *                            check this before submit; if it lets it
+ *                            through, the server returns 422.
+ *
+ *   401 Unauthorized       — no session / bad session.
+ *   403 Forbidden          — session is valid but caller can't access
+ *                            this row (RLS denies, role check fails).
+ *
  * Per ADR-009. Replaces the prior `throw new Response(...)` pattern.
  */
 
-import { ok, fail } from "./api";
+import { fail } from "./api";
 
 export abstract class AppError extends Error {
   abstract readonly status: number;
@@ -25,14 +42,30 @@ export abstract class AppError extends Error {
   }
 }
 
+// ============================================
+// 4xx client errors
+// ============================================
+
 export class AuthError extends AppError {
   readonly status = 401;
   readonly code = "unauthorized";
 }
 
-export class ValidationError extends AppError {
+export class ForbiddenError extends AppError {
+  readonly status = 403;
+  readonly code = "forbidden";
+}
+
+/**
+ * Caller sent a malformed body. The form should prevent this; the server
+ * fires it only when a non-form caller (curl, replay, bad client) sends
+ * something the schema can't parse. Carries `details` (typically the zod
+ * flatten output) so the client can show field-level errors when it does
+ * receive one.
+ */
+export class InvalidParameterError extends AppError {
   readonly status = 400;
-  readonly code = "bad_request";
+  readonly code = "invalid_parameter";
   constructor(
     message: string,
     public readonly details?: unknown,
@@ -40,6 +73,33 @@ export class ValidationError extends AppError {
   ) {
     super(message, cause);
   }
+}
+
+/**
+ * Body parsed fine but violates a business rule. The form should check
+ * these before submit (e.g. endTime > startTime); if it lets it through,
+ * the server returns 422.
+ */
+export class UnprocessableError extends AppError {
+  readonly status = 422;
+  readonly code = "unprocessable";
+  constructor(
+    message: string,
+    public readonly details?: unknown,
+    cause?: unknown,
+  ) {
+    super(message, cause);
+  }
+}
+
+export class PayloadTooLargeError extends AppError {
+  readonly status = 413;
+  readonly code = "payload_too_large";
+}
+
+export class RateLimitedError extends AppError {
+  readonly status = 429;
+  readonly code = "rate_limited";
 }
 
 export class NotFoundError extends AppError {
@@ -52,16 +112,39 @@ export class ConflictError extends AppError {
   readonly code = "conflict";
 }
 
+export class MethodNotAllowedError extends AppError {
+  readonly status = 405;
+  readonly code = "method_not_allowed";
+}
+
+// ============================================
+// 5xx server errors
+// ============================================
+
 export class InternalError extends AppError {
   readonly status = 500;
   readonly code = "server_error";
 }
 
+export class NotImplementedError extends AppError {
+  readonly status = 501;
+  readonly code = "not_implemented";
+}
+
+export class ServiceUnavailableError extends AppError {
+  readonly status = 503;
+  readonly code = "service_unavailable";
+}
+
+// ============================================
+// Mapper
+// ============================================
+
 /**
  * Map any thrown value to a typed JSON `Response`.
  *
- * - `AppError` subclass → its `status` + `code` + `message` (+ `details` for
- *   `ValidationError`).
+ * - `AppError` subclass → its `status` + `code` + `message` (+ `details`
+ *   for `InvalidParameterError` and `UnprocessableError`).
  * - `Response` → returned as-is (back-compat for `requireUserId()` while the
  *   migration is in flight; will be removed once all callers throw `AppError`).
  * - Anything else → `InternalError`, message extracted from `Error.message`
@@ -69,7 +152,10 @@ export class InternalError extends AppError {
  */
 export function errorToResponse(err: unknown): Response {
   if (err instanceof AppError) {
-    if (err instanceof ValidationError) {
+    if (
+      err instanceof InvalidParameterError ||
+      err instanceof UnprocessableError
+    ) {
       return fail(err.code, err.message, err.status, err.details);
     }
     return fail(err.code, err.message, err.status);
