@@ -70,6 +70,10 @@ export function getTaskSizeCategory(
   durationMinutes: number,
   userTimeScale: UserTimeScale,
 ): TaskSizeCategory {
+  const boulderMinutes = toMinutes(
+    userTimeScale.boulder.value,
+    userTimeScale.boulder.unit as TimeUnit,
+  );
   const rockMinutes = toMinutes(
     userTimeScale.rock.value,
     userTimeScale.rock.unit as TimeUnit,
@@ -78,13 +82,9 @@ export function getTaskSizeCategory(
     userTimeScale.pebble.value,
     userTimeScale.pebble.unit as TimeUnit,
   );
-  const sandMinutes = toMinutes(
-    userTimeScale.sand.value,
-    userTimeScale.sand.unit as TimeUnit,
-  );
 
-  if (durationMinutes >= rockMinutes) return "boulder";
-  if (durationMinutes >= pebbleMinutes) return "rock";
-  if (durationMinutes >= sandMinutes) return "pebble";
+  if (durationMinutes >= boulderMinutes) return "boulder";
+  if (durationMinutes >= rockMinutes) return "rock";
+  if (durationMinutes >= pebbleMinutes) return "pebble";
   return "sand";
 }

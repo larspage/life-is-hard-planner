@@ -25,8 +25,7 @@
  * add it back when the phase lands.
  */
 
-import NextAuth from "next-auth";
-import type { NextAuthConfig } from "next-auth";
+import NextAuth, { type NextAuthOptions } from "next-auth";
 import GitHub from "next-auth/providers/github";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
@@ -45,11 +44,11 @@ const isDev = process.env.NODE_ENV !== "production";
 const credsEnabled =
   isDev && process.env.ENABLE_CREDENTIALS_PROVIDER === "true";
 
-export const authConfig: NextAuthConfig = {
+export const authConfig: NextAuthOptions = {
   providers: [
     GitHub({
-      clientId: process.env.GITHUB_ID,
-      clientSecret: process.env.GITHUB_SECRET,
+      clientId: process.env.GITHUB_ID ?? "",
+      clientSecret: process.env.GITHUB_SECRET ?? "",
     }),
     ...(credsEnabled
       ? [
@@ -89,13 +88,13 @@ export const authConfig: NextAuthConfig = {
   },
   session: { strategy: "jwt" },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user }: { token: any; user?: { id?: string } }) {
       if (user?.id) {
         token.userId = user.id;
       }
       return token;
     },
-    async session({ session, token }) {
+    async session({ session, token }: { session: any; token: any }) {
       if (typeof token.userId === "string" && session.user) {
         session.user.id = token.userId;
       }
@@ -103,7 +102,7 @@ export const authConfig: NextAuthConfig = {
     },
   },
   events: {
-    async signIn({ user }) {
+    async signIn({ user }: { user?: { id?: string } }) {
       // 60-day trial downgrade: if a user's trial has expired, downgrade the
       // subscription tier from TRIAL to FREE on every sign-in. This is the
       // equivalent of the original Express `apps/api/src/routes/auth.ts`

@@ -3,8 +3,13 @@ import { withUserContext } from "@/db";
 import { timeBlocks } from "@/db/schema";
 import { requireUserId } from "@/lib/auth";
 import { notFound, ok } from "@/lib/api";
-import { InternalError, ValidationError, withErrorHandling } from "@/lib/errors";
+import {
+  InternalError,
+  ValidationError,
+  withErrorHandling,
+} from "@/lib/errors";
 import { timeBlockSchema } from "@/lib/validation";
+import { z } from "zod";
 
 export const GET = withErrorHandling(
   async (_req: Request, { params }: { params: { id: string } }) => {
@@ -25,7 +30,18 @@ export const PATCH = withErrorHandling(
   async (req: Request, { params }: { params: { id: string } }) => {
     const userId = await requireUserId();
     const body = await req.json().catch(() => null);
-    const parsed = timeBlockSchema.partial().safeParse(body);
+    // timeBlockSchema has a .refine() so it's ZodEffects, not ZodObject; no .partial().
+    // For PATCH we want all fields optional and skip the refine check (since the
+    // caller may update only one of startTime/endTime). Validate with the base
+    // shape and skip the cross-field check on partial updates.
+    const parsed = z
+      .object({
+        taskId: z.string().uuid().optional(),
+        startTime: z.coerce.date().optional(),
+        endTime: z.coerce.date().optional(),
+        date: z.coerce.date().optional(),
+      })
+      .safeParse(body);
     if (!parsed.success) {
       return Response.json(
         {
