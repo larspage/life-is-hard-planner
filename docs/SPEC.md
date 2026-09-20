@@ -85,6 +85,79 @@ migration. See ADR-007 for the rationale.
 - Habit tracker templates
 - Stripe integration for premium tier
 
+### Calendar UX (v0.3.0-beta detailed)
+
+The calendar is the central surface for Big Rocks scheduling. Researched
+against four best-in-class apps — Morgen, Google Calendar, Calendly,
+Fantastical — and a survey of calendar component libraries. Full citations
+and source URLs in the brain handoff. Synthesis:
+
+**Patterns we adopt** (ranked by leverage against SPEC §v0.3.0):
+
+1. **Calendar Sets with toggleable left rail** — Morgen + Fantastical.
+   Named, savable subsets ("Work", "Personal", "Principles") the user
+   can toggle. Persisted as `user_calendar_sets` rows keyed by `user_id`.
+   UI: shadcn `DropdownMenu` + `CheckboxItem` rows in a sidebar.
+2. **Color-per-calendar everywhere** — Google Calendar. The 11-color GCal
+   palette as defaults (`Tomato, Tangerine, Banana, Sage, Basil, Peacock,
+Blueberry, Lavender, Grape, Graphite, Modern Slate`); custom hex
+   allowed. The color paints every event block, every task chip, every
+   agenda entry, every DayTicker dot.
+3. **Click-empty-slot-to-create + natural-language quick add** — Google
+   - Fantastical. Inline popover for click-create (start/end pre-filled
+     from the click position); command palette (cmdk) for NL quick add.
+4. **Time-block tasks distinctly from events** — Morgen. Tasks on the
+   grid render with dashed border, lower opacity, or hatched fill. They
+   drag onto the grid just like events. This is the visual hook for
+   "principles as time blocks."
+5. **DayTicker + six-view ladder (Day/Week/Month/Quarter/Year)** —
+   Fantastical. DayTicker is a horizontal scrollable strip of consecutive
+   days above the main grid; tapping a day jumps to it. The view ladder
+   is the zoom-out path that GCal lacks.
+6. **Buffer/break time auto-insert + daily limits per principle** —
+   Calendly + Morgen. Configurable pre/post buffer per event type; hard
+   cap per principle category ("2 of 2 deep-work blocks used today").
+
+**Patterns we explicitly do NOT adopt:**
+
+- AI-driven auto-scheduling (Morgen). Undermines user agency in a
+  principles-based planner. Recommendations stay visible and optional.
+- Public booking links (Calendly). Wrong shape for a private tool.
+- Gmail auto-event extraction (Google). Out of scope; false positives
+  are a UX trap.
+- Apple-ecosystem-native feel (Fantastical). Web-first; Lock Screen
+  widgets, Standby mode, Vision Pro layouts don't translate.
+
+**Tailwind + shadcn component picks:** `Tabs` for view switching,
+`DropdownMenu` for Calendar Sets, `Popover` for click-create, `Command`
+(cmdk) for NL quick-add, `ScrollArea` for DayTicker, `Card` for event
+blocks, `Switch` for calendar toggles, `Progress` for daily-limit
+indicators.
+
+**Implementation stack** (researched against calendar component libraries
+and integrations):
+
+| Concern        | Alpha (v0.2.0-alpha / start of beta)                                                                    | Beta+ (v0.3.0-beta / v0.4.0-GA)                                                                        |
+| -------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Views          | [Schedule-X](https://schedule-x.com) (MIT, modular, unopinionated CSS)                                  | Evaluate custom Tailwind grid once the three themes harden                                             |
+| Drag-and-drop  | [@dnd-kit](https://dndkit.com) (keyboard-first a11y, sortable preset) — override Schedule-X's HTML5-DnD | Same                                                                                                   |
+| Google sync    | [googleapis](https://github.com/googleapis/google-api-nodejs-client) direct (read-only in alpha)        | googleapis + write support                                                                             |
+| Multi-provider | —                                                                                                       | [Nylas](https://developer.nylas.com) for Microsoft + iCloud aggregation                                |
+| ICS            | [node-ical](https://github.com/jens-maus/node-ical) for one-off imports                                 | Add export via `ics` package (RFC 5545 builder)                                                        |
+| Time-zones     | `date-fns` + `date-fns-tz`                                                                              | Migrate to [Temporal](https://tc39.es/proposal-temporal) once stage 4 + Safari native ship (2026-2027) |
+| Pickers        | shadcn/ui `Calendar` (react-day-picker v8) + shadcn `Combobox` for time-of-day                          | Same                                                                                                   |
+
+**Critical accessibility call from research:** override Schedule-X's
+built-in DnD plugin with `@dnd-kit` from day one. Schedule-X ships HTML5
+DnD under the hood, which has no keyboard support. `@dnd-kit`'s keyboard
+sensor and live-region announcements are the difference between a
+Franklin-Covey-grade tool and one that fails keyboard users.
+
+**Theme strategy:** CSS variables, not component variants. Three
+`app/calendar/themes/{linear,notion,apple}.css` files swap based on
+user preference in `user_settings`. Schedule-X exposes its visual
+surface through CSS classes — leverage that.
+
 ## Release strategy
 
 v0.2.0 is a full rewrite — yarn workspaces + Express + Prisma + Loki gone;

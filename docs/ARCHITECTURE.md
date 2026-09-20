@@ -567,3 +567,273 @@ unknown): Response` mapper in `lib/errors.ts` turns any thrown value into
     discarded.
   - Future PRs target the new repo. `life-is-hard-planner` is read-only
     archaeology.
+
+### ADR-013: Calendar UX patterns (Morgen, Google, Calendly, Fantastical)
+
+- **Status**: Accepted (2026-09-19)
+- **Context**: SPEC §v0.3.0-beta calls for a weekly grid drag-and-drop
+  scheduler "the heart of the Big Rocks workflow" with three theme
+  options (Linear-minimal, Notion-card, Apple-grid). We needed a
+  ranked list of UX patterns from best-in-class calendar apps to
+  inform the design.
+- **Sources**: morgen.so, support.google.com/calendar, calendly.com,
+  flexibits.com/fantastical. Full citations in the brain page
+  `[[lifeos-calendar-ux-research-2026-09-19]]`.
+- **Decision** (ranked by leverage for LifeOS):
+  1. **Calendar Sets with toggleable left rail** (Morgen + Fantastical)
+     — named, savable subsets of calendars the user can toggle.
+     Persisted as `user_calendar_sets` rows keyed by `user_id`. UI:
+     shadcn `DropdownMenu` + `CheckboxItem` rows in a sidebar.
+  2. **Color-per-calendar everywhere** (Google) — the 11-color GCal
+     palette as defaults; custom hex allowed. The color paints every
+     event block, every task chip, every agenda entry, every DayTicker
+     dot. Exposed as `--calendar-color` CSS variable on the row.
+  3. **Click-empty-slot-to-create + natural-language quick add**
+     (Google + Fantastical). Inline popover for click-create (start/end
+     pre-filled from the click position); cmdk command palette for NL
+     quick add. These two creation paths cover 95% of event creation.
+  4. **Time-block tasks distinctly from events** (Morgen) — tasks on
+     the grid render with dashed border, lower opacity, or hatched
+     fill. They drag onto the grid just like events. This is the
+     visual hook for "principles as time blocks."
+  5. **DayTicker + six-view ladder** (Fantastical) — DayTicker is a
+     horizontal scrollable strip of consecutive days above the main
+     grid. The view ladder (Day/Week/Month/Quarter/Year) gives the user
+     a zoom-out path that GCal lacks.
+  6. **Buffer/break time auto-insert + daily limits per principle**
+     (Calendly + Morgen). Configurable pre/post buffer per event type;
+     hard cap per principle category surfaced as a `Progress` chip.
+- **Patterns explicitly NOT adopted**:
+  - AI-driven auto-scheduling (Morgen). Undermines user agency in a
+    principles-based planner; recommendations stay visible and optional.
+  - Public booking links (Calendly). Wrong shape for a private tool.
+  - Gmail auto-event extraction (Google). Out of scope; false positives
+    are a UX trap.
+  - Apple-ecosystem-native feel (Fantastical). Web-first; Lock Screen
+    widgets, Standby mode, Vision Pro layouts don't translate.
+- **Consequences**:
+  - SPEC §v0.3.0-beta Calendar UX section captures the ranked list with
+    source citations.
+  - Tailwind + shadcn component picks: `Tabs`, `DropdownMenu`, `Popover`,
+    `Command` (cmdk), `ScrollArea`, `Card`, `Switch`, `Progress`.
+  - Three themes via CSS variables (`app/calendar/themes/{linear,notion,apple}.css`),
+    not component variants — Schedule-X exposes its visual surface
+    through CSS classes, which we leverage.
+
+### ADR-014: Calendar stack — Schedule-X + @dnd-kit + googleapis
+
+- **Status**: Accepted (2026-09-19)
+- **Context**: We surveyed calendar component libraries, drag-and-drop
+  libraries, and provider integrations for a Next.js 14 + React 18 +
+  Tailwind + shadcn stack. Full survey with bundle sizes, license,
+  TypeScript support in the brain page
+  `[[lifeos-calendar-stack-research-2026-09-19]]`.
+- **Options considered**:
+  - **Views**: FullCalendar (MIT core + commercial Premium for DnD),
+    React Big Calendar (MIT, no built-in DnD), Schedule-X (MIT,
+    modular), DayPilot Lite (Apache-2.0 Lite + commercial Pro),
+    custom Tailwind grid.
+  - **Drag-and-drop**: @dnd-kit, react-dnd, Pragmatic drag-and-drop
+    (Atlassian).
+  - **Google sync**: googleapis direct, Nylas (commercial),
+    Cronofy (commercial).
+  - **Multi-provider read**: Nylas, Cronofy, Cal.com v2 API.
+  - **Time-zones**: date-fns-tz, Luxon, Day.js + plugins,
+    Temporal (polyfill).
+  - **Pickers**: shadcn/ui Calendar (react-day-picker v8+),
+    react-datepicker.
+- **Decision**:
+  - **Views**: Schedule-X in alpha. MIT license, modular packages
+    (`@schedule-x/calendar`, `@schedule-x/drag-and-drop`,
+    `@schedule-x/event-modal`), native TS, decoupled CSS that doesn't
+    fight Tailwind, active 2024-2025 development. Re-evaluate for v1.0
+    once the three themes harden — a custom Tailwind grid is the
+    long-term answer.
+  - **Drag-and-drop**: **Override** Schedule-X's built-in DnD with
+    @dnd-kit from day one. Schedule-X ships HTML5 DnD under the hood
+    (no keyboard support); @dnd-kit's keyboard sensor + live-region
+    announcements are the difference between an a11y-compliant
+    Franklin-Covey tool and one that fails keyboard users.
+  - **Google sync**: googleapis direct in alpha (Google only, free,
+    well-typed, 1M queries/day quota). Nylas in beta when MS/iCloud
+    enter scope. node-ical for ICS one-off imports.
+  - **Time-zones**: date-fns + date-fns-tz. Plan a Temporal migration
+    once stage 4 + Safari native ship (2026-2027).
+  - **Pickers**: shadcn/ui Calendar (react-day-picker v8) + shadcn
+    Combobox for time-of-day entry.
+- **Risks captured**:
+  - Schedule-X maturity (first public release 2023). Mitigation: vendor
+    behind a thin wrapper; one-import swap later.
+  - FullCalendar Premium lock-in ($480/dev/yr for DnD). Don't start
+    there; the MIT tier is crippled for this use case.
+  - Nylas vendor lock-in (pricing scales per user, changed tiers twice
+    in three years). Keep googleapis calls behind a `CalendarProvider`
+    interface; Nylas is a swap-in, not a load-bearing dep.
+  - Cal.com AGPL on self-host is viral copyleft. Use the commercial v2
+    API for embed flows, not AGPL.
+  - @dnd-kit maintenance pace (6+ month gaps between releases). Pin
+    core/sortable/utilities to specific versions.
+  - Google API quota blowups (50k/100s/project). Exponential backoff,
+    conditional GETs with ETags, per-user backoff.
+- **Alpha / Beta / GA split**:
+  - **v0.2.0-alpha**: Schedule-X week + day views (no month); @dnd-kit
+    drag (override Schedule-X's built-in); shadcn Calendar + Combobox
+    for creation; date-fns-tz; single-theme (Linear-minimal flat);
+    googleapis Google Calendar read-only.
+  - **v0.3.0-beta**: Add Notion-card and Apple-grid themes via CSS-var
+    swap; Month + agenda views; Google Calendar write; ICS import;
+    sync tokens + incremental sync.
+  - **v0.4.0-GA**: Nylas aggregation for MS + iCloud; two-way write
+    sync with last-write-wins conflict resolution; Reclaim.ai-style
+    "smart suggestions" (own LLM); Temporal migration behind feature
+    flag; Schedule-X vs custom-grid decision for v1.0.
+
+### ADR-015: Calendar schema (events, calendars, sync_state, calendar_sets)
+
+- **Status**: Accepted (2026-09-19)
+- **Context**: The calendar feature needs new tables. The current schema
+  (`db/schema.ts` + `0000_initial_schema.sql`) has `time_blocks` for our
+  own blocks but no notion of external calendar events, calendar sets,
+  sync state, or provider metadata.
+- **Decision**: Add four tables (lands in `0002_calendar_schema.sql`):
+
+  ```sql
+  -- calendars: a "calendar" in the Morgen/Fantastical sense — a named
+  -- source of events. May be user-local (manual), or a synced mirror
+  -- of a Google Calendar.
+  CREATE TABLE "calendars" (
+    "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+    "user_id" uuid NOT NULL REFERENCES "public"."users"("id") ON DELETE cascade,
+    "name" text NOT NULL,
+    "color" text DEFAULT '#6366f1' NOT NULL,
+    "provider" text,         -- 'local' | 'google' | NULL
+    "provider_id" text,      -- Google calendar id when synced
+    "provider_etag" text,    -- last seen ETag for incremental sync
+    "is_visible" boolean DEFAULT true NOT NULL,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT now() NOT NULL
+  );
+
+  -- events: the unified event table. Source-of-truth for both local
+  -- events and mirrored Google events. provider='local' rows are
+  -- writable; provider='google' rows are read mirrors and pushes
+  -- back to Google on edit.
+  CREATE TABLE "events" (
+    "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+    "user_id" uuid NOT NULL REFERENCES "public"."users"("id") ON DELETE cascade,
+    "calendar_id" uuid NOT NULL REFERENCES "public"."calendars"("id") ON DELETE cascade,
+    "title" text NOT NULL,
+    "description" text,
+    "location" text,
+    "start_time" timestamp with time zone NOT NULL,
+    "end_time" timestamp with time zone NOT NULL,
+    "timezone" text NOT NULL DEFAULT 'UTC',
+    "is_all_day" boolean DEFAULT false NOT NULL,
+    "is_task" boolean DEFAULT false NOT NULL,    -- true when event is a task-as-block
+    "status" text DEFAULT 'CONFIRMED' NOT NULL,  -- CONFIRMED | TENTATIVE | CANCELLED
+    "provider" text DEFAULT 'local' NOT NULL,
+    "provider_id" text,                          -- Google event id when synced
+    "provider_etag" text,                        -- last seen ETag
+    "conference_url" text,                       -- auto-detected Zoom/Meet/Teams URL
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT now() NOT NULL
+  );
+
+  -- sync_state: per-calendar incremental sync bookkeeping. Google uses
+  -- syncToken; we cache last_synced_at for fallback. RLS applies.
+  CREATE TABLE "sync_state" (
+    "calendar_id" uuid PRIMARY KEY REFERENCES "public"."calendars"("id") ON DELETE cascade,
+    "user_id" uuid NOT NULL REFERENCES "public"."users"("id") ON DELETE cascade,
+    "sync_token" text,
+    "last_synced_at" timestamp with time zone,
+    "next_sync_after" timestamp with time zone,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT now() NOT NULL
+  );
+
+  -- calendar_sets: named savable subsets of calendars. The user
+  -- toggles visibility of calendars within a set; the active set
+  -- determines what renders on the grid. Per-user.
+  CREATE TABLE "calendar_sets" (
+    "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+    "user_id" uuid NOT NULL REFERENCES "public"."users"("id") ON DELETE cascade,
+    "name" text NOT NULL,
+    "is_active" boolean DEFAULT false NOT NULL,  -- exactly one set per user should be active
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT now() NOT NULL
+  );
+
+  -- calendar_set_members: which calendars belong to each set.
+  CREATE TABLE "calendar_set_members" (
+    "set_id" uuid REFERENCES "public"."calendar_sets"("id") ON DELETE cascade,
+    "calendar_id" uuid REFERENCES "public"."calendars"("id") ON DELETE cascade,
+    "user_id" uuid NOT NULL REFERENCES "public"."users"("id") ON DELETE cascade,
+    "is_visible" boolean DEFAULT true NOT NULL,
+    PRIMARY KEY ("set_id", "calendar_id")
+  );
+  ```
+
+- **Consequences**:
+  - Migration `0002_calendar_schema.sql` lands at the start of beta
+    (v0.3.0-beta). Alpha ships without it.
+  - RLS policies added to `0003_calendar_rls_policies.sql` (extends
+    `0001_rls_policies.sql`).
+  - `events.is_task` is the visual hook for "principles as time blocks"
+    (ADR-013 pattern #4).
+  - `calendar_sets.is_active` enforced by a Postgres trigger ensuring
+    exactly one active set per user.
+  - `provider_etag` + `sync_state.sync_token` enable incremental sync
+    (Google's recommended pattern; avoids quota blowups).
+
+### ADR-016: Calendar a11y — @dnd-kit keyboard-first, no HTML5 DnD
+
+- **Status**: Accepted (2026-09-19)
+- **Context**: The calendar grid is the central surface for Big Rocks
+  scheduling. Franklin Covey users are keyboard-first planners. A
+  drag-only UI fails those users.
+- **Decision**: All drag-and-drop interactions on the calendar grid
+  use `@dnd-kit` with its keyboard sensor enabled by default. No
+  HTML5-native drag-and-drop anywhere in the calendar feature.
+  Schedule-X's built-in DnD plugin is **not** used; events are
+  rendered through Schedule-X but the drag interaction layer is
+  custom on top.
+- **Consequences**:
+  - The `app/(portal)/calendar/` pages import `@dnd-kit/core`,
+    `@dnd-kit/sortable`, and `@dnd-kit/utilities` directly.
+  - A custom `DndContext` wraps the grid; events are draggable items
+    inside a sortable calendar (time slots as droppable zones).
+  - Live-region announcements on every drag event (default in
+    `@dnd-kit`'s keyboard sensor).
+  - Focus management: tab moves through events; arrow keys within an
+    event moves it to adjacent slots.
+  - Tested via `@testing-library/react` + `@testing-library/user-event`
+    keyboard interactions.
+
+### ADR-017: Calendar theme system (CSS variables, three themes)
+
+- **Status**: Accepted (2026-09-19)
+- **Context**: SPEC §v0.3.0-beta requires three user-selectable
+  calendar themes: Linear-minimal (flat), Notion-card (rounded,
+  elevated), Apple-grid (native feel). The themes affect the grid
+  layout, event card shape, time axis, and DayTicker.
+- **Decision**: CSS variables, not component variants. Three CSS files
+  (`app/calendar/themes/{linear,notion,apple}.css`) define the same set
+  of variables with theme-specific values. The active theme loads via
+  a class on the calendar root element (`.theme-linear`,
+  `.theme-notion`, `.theme-apple`) set by user preference in
+  `user_settings.calendar_theme`.
+- **Variable surface** (every theme must define):
+  - `--calendar-grid-bg`, `--calendar-grid-line`, `--calendar-grid-today-bg`
+  - `--calendar-event-bg`, `--calendar-event-fg`, `--calendar-event-border-radius`
+  - `--calendar-event-shadow`, `--calendar-event-padding`
+  - `--calendar-task-bg`, `--calendar-task-border-style`
+  - `--calendar-time-axis-width`, `--calendar-time-axis-font-weight`
+  - `--calendar-dayticker-height`, `--calendar-dayticker-day-width`
+- **Consequences**:
+  - Schedule-X's CSS classes can be overridden by the theme variables
+    (no need to fork the lib).
+  - Tailwind config maps the variables to its theme.extend so
+    shadcn primitives (Card, Button, etc.) re-skin too.
+  - A theme preview can be rendered server-side or client-side by
+    swapping the class on the calendar root.
+  - Adding a fourth theme is one new CSS file + one enum entry.
