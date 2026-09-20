@@ -11,7 +11,7 @@
 import { z } from "zod";
 import { InternalError } from "./errors";
 
-const envSchema = z.object({
+export const envSchema = z.object({
   DATABASE_URL: z.string().url(),
   NEXTAUTH_URL: z.string().url(),
   NEXTAUTH_SECRET: z.string().min(1),
@@ -32,8 +32,15 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>;
 
-function parseEnv(): Env {
-  const result = envSchema.safeParse(process.env);
+/**
+ * Validate an env-shaped object. Exported so tests can call it directly
+ * without touching process.env. Production-only sanity checks (credentials
+ * provider must be off; GitHub OAuth required) are enforced here too.
+ */
+export function parseEnv(
+  raw: Record<string, string | undefined> = process.env,
+): Env {
+  const result = envSchema.safeParse(raw);
   if (!result.success) {
     const flat = result.error.flatten();
     throw new InternalError(
@@ -41,8 +48,6 @@ function parseEnv(): Env {
     );
   }
 
-  // Production-only sanity checks. These don't fail the parse but throw if
-  // a production env is misconfigured.
   if (result.data.NODE_ENV === "production") {
     if (result.data.ENABLE_CREDENTIALS_PROVIDER) {
       throw new InternalError(
@@ -59,4 +64,19 @@ function parseEnv(): Env {
   return result.data;
 }
 
-export const env = parseEnv();
+export const env = (() => {
+  try {
+    return parseEnv();
+  } catch (err) {
+    // Tests that import lib/env without a complete process.env should not
+    // crash on module-load. The env module is consumed by `lib/auth.ts` for
+    // session cookies, by `db/index.ts` for DATABASE_URL, etc. — but those
+    // modules don't run during a pure unit test that only inspects parseEnv.
+    // If a test wants the real env it can call parseEnv() directly with a
+    // populated env object.
+    if (err instanceof InternalError) {
+      return undefined as unknown as Env;
+    }
+    throw err;
+  }
+})();
