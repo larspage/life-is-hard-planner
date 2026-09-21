@@ -8,11 +8,18 @@
  * Providers:
  *   - GitHub OAuth in all environments (production primary).
  *   - Credentials provider ONLY when:
- *       (a) NODE_ENV !== 'production', AND
+ *       (a) LIFEOS_DEPLOYMENT_MODE !== 'production', AND
  *       (b) ENABLE_CREDENTIALS_PROVIDER === 'true'.
- *     The credentials provider seeds an env-bypass for local development so
- *     Larry can log in without configuring GitHub OAuth. Mirrors the MrBrooks
- *     Admin Portal `lib/auth.ts` pattern.
+ *     The credentials provider seeds an env-bypass for local development and
+ *     for staging so Larry can log in without configuring GitHub OAuth.
+ *     Mirrors the MrBrooks Admin Portal `lib/auth.ts` pattern.
+ *
+ *     In `staging` mode, a magic password (`STAGING_MAGIC_PASSWORD`) bypasses
+ *     bcrypt — the user is looked up by email alone. This powers the
+ *     user-select UI on `/login` so internal testers click a name instead of
+ *     typing credentials. The bypass is gated on LIFEOS_DEPLOYMENT_MODE ===
+ *     'staging'; in any other mode the magic password is treated as a normal
+ *     password (and would not match any real password hash).
  *
  * Session enrichment: the `jwt` and `session` callbacks promote `user.id` to
  * `token.userId` and back to `session.user.id` so route handlers can pull the
@@ -40,9 +47,12 @@ const credentialsSchema = z.object({
   password: z.string().min(1),
 });
 
-const isDev = process.env.NODE_ENV !== "production";
+const STAGING_MAGIC_PASSWORD = "__lifeos_staging__";
+
+const deploymentMode = process.env.LIFEOS_DEPLOYMENT_MODE ?? "production";
 const credsEnabled =
-  isDev && process.env.ENABLE_CREDENTIALS_PROVIDER === "true";
+  deploymentMode !== "production" &&
+  process.env.ENABLE_CREDENTIALS_PROVIDER === "true";
 
 export const authConfig: NextAuthOptions = {
   providers: [
@@ -68,11 +78,22 @@ export const authConfig: NextAuthOptions = {
                 .limit(1);
               const found = user[0];
               if (!found) return null;
-              const ok = await bcrypt.compare(
-                parsed.data.password,
-                found.passwordHash,
-              );
-              if (!ok) return null;
+
+              // Staging bypass: magic password + staging mode = sign in as
+              // the user without bcrypt. The bypass is gated on both halves
+              // — a magic password alone never matches any real hash.
+              const isStagingBypass =
+                deploymentMode === "staging" &&
+                parsed.data.password === STAGING_MAGIC_PASSWORD;
+
+              if (!isStagingBypass) {
+                const ok = await bcrypt.compare(
+                  parsed.data.password,
+                  found.passwordHash,
+                );
+                if (!ok) return null;
+              }
+
               return {
                 id: found.id,
                 email: found.email,

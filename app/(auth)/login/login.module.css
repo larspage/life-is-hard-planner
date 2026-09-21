@@ -68,3 +68,94 @@
   font-size: 13px;
   margin: 0;
 }
+
+.banner {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: var(--radius-sm);
+  color: #b45309;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.userList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.userItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition:
+    border-color 120ms ease,
+    background 120ms ease;
+}
+
+.userItem:hover:not(:disabled) {
+  border-color: var(--primary);
+  background: rgba(37, 99, 235, 0.04);
+}
+
+.userItem:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.userEmail {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.userMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.tierBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.tierTrial {
+  background: rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+}
+
+.tierFree {
+  background: rgba(107, 114, 128, 0.16);
+  color: #374151;
+}
+
+.tierPaid {
+  background: rgba(16, 185, 129, 0.16);
+  color: #047857;
+}

@@ -28,6 +28,23 @@ export const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
     .default("development"),
+  /**
+   * Deployment mode — decoupled from NODE_ENV because Next.js forces
+   * NODE_ENV=production on `next start`, which would block the dev/staging
+   * auth gates on any Railway-hosted env (including staging). Defaults to
+   * `production` so an unset variable keeps the strict checks on.
+   *
+   * `production` — strict: credentials provider must be off, GitHub OAuth
+   *                required, no staging endpoints callable.
+   * `staging`    — relaxed: credentials provider may be on, GitHub OAuth
+   *                optional, staging endpoints callable, magic-password
+   *                user-select bypass enabled.
+   * `development`— same relaxed rules as staging, plus the credentials
+   *                provider renders the standard email/password form.
+   */
+  LIFEOS_DEPLOYMENT_MODE: z
+    .enum(["production", "staging", "development"])
+    .default("production"),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -48,7 +65,7 @@ export function parseEnv(
     );
   }
 
-  if (result.data.NODE_ENV === "production") {
+  if (result.data.LIFEOS_DEPLOYMENT_MODE === "production") {
     if (result.data.ENABLE_CREDENTIALS_PROVIDER) {
       throw new InternalError(
         "ENABLE_CREDENTIALS_PROVIDER must be false in production",
