@@ -1,92 +1,73 @@
-import Link from "next/link";
 import { asc, eq } from "drizzle-orm";
 import { withUserContext } from "@/db";
 import { goals, roles } from "@/db/schema";
 import { requireUserId } from "@/lib/auth";
+import { GoalRow, GoalsForm } from "./goals-form";
 
 export const metadata = { title: "Goals — LifeOS" };
 
+type GoalRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  horizon: "LONG_TERM" | "MID_TERM";
+  status: "ACTIVE" | "COMPLETED" | "ARCHIVED";
+  targetDate: string | null;
+  roleId: string | null;
+  roleName: string | null;
+};
+
+type RoleRow = { id: string; name: string };
+
 export default async function GoalsPage() {
   const userId = await requireUserId();
-  const rows = await withUserContext(userId, async (tx) => {
+  const goalRows = (
+    await withUserContext(userId, async (tx) => {
+      return tx
+        .select({
+          id: goals.id,
+          title: goals.title,
+          description: goals.description,
+          horizon: goals.horizon,
+          status: goals.status,
+          targetDate: goals.targetDate,
+          roleId: goals.roleId,
+          roleName: roles.name,
+        })
+        .from(goals)
+        .leftJoin(roles, eq(goals.roleId, roles.id))
+        .where(eq(goals.userId, userId))
+        .orderBy(asc(goals.createdAt));
+    })
+  ).map((g) => ({
+    ...g,
+    targetDate: g.targetDate ? g.targetDate.toISOString() : null,
+  })) as GoalRow[];
+  const roleRows = await withUserContext<RoleRow[]>(userId, async (tx) => {
     return tx
-      .select({
-        id: goals.id,
-        title: goals.title,
-        description: goals.description,
-        horizon: goals.horizon,
-        status: goals.status,
-        targetDate: goals.targetDate,
-        roleId: goals.roleId,
-        roleName: roles.name,
-      })
-      .from(goals)
-      .leftJoin(roles, eq(goals.roleId, roles.id))
-      .where(eq(goals.userId, userId))
-      .orderBy(asc(goals.createdAt));
+      .select({ id: roles.id, name: roles.name })
+      .from(roles)
+      .where(eq(roles.userId, userId))
+      .orderBy(asc(roles.priorityWeight), asc(roles.createdAt));
   });
 
-  if (rows.length === 0) {
-    return (
-      <div className="card" style={{ textAlign: "center", padding: 48 }}>
-        <h2 style={{ marginTop: 0 }}>No goals yet</h2>
-        <p className="muted">
-          Goals are long- or mid-term outcomes tied to a role.
-        </p>
-        <p className="muted" style={{ fontSize: 13 }}>
-          CRUD UI lands next. Use the API for now: <code>POST /api/goals</code>.
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <div className="stack stack--lg">
-      <h1 style={{ margin: 0 }}>Goals</h1>
-      <ul
-        style={{ listStyle: "none", padding: 0, margin: 0 }}
-        className="stack"
-      >
-        {rows.map((g) => (
-          <li key={g.id} className="card">
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: 12,
-              }}
-            >
-              <div>
-                <strong>{g.title}</strong>
-                {g.description && (
-                  <p
-                    className="muted"
-                    style={{ margin: "6px 0 0", fontSize: 14 }}
-                  >
-                    {g.description}
-                  </p>
-                )}
-              </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <span className="badge">{g.horizon}</span>
-                <span
-                  className={`badge ${
-                    g.status === "ACTIVE"
-                      ? "badge--accent"
-                      : g.status === "COMPLETED"
-                        ? "badge--success"
-                        : ""
-                  }`}
-                >
-                  {g.status}
-                </span>
-                {g.roleName && <span className="badge">{g.roleName}</span>}
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-semibold">Goals</h1>
+      <GoalsForm roles={roleRows} />
+      {goalRows.length === 0 ? (
+        <div className="rounded-md border border-border bg-card p-12 text-center">
+          <p className="text-muted-foreground">
+            No goals yet. Use the form above to create your first one.
+          </p>
+        </div>
+      ) : (
+        <ul className="space-y-2">
+          {goalRows.map((g) => (
+            <GoalRow key={g.id} goal={g} roles={roleRows} />
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

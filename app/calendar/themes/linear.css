@@ -1,0 +1,28 @@
+/**
+ * Linear-minimal flat — calendar alpha theme (ADR-013 + ADR-017).
+ *
+ * Quiet, dense, alpha-channel-only. Event blocks borrow their color
+ * from the parent calendar (CSS custom property `--calendar-color`
+ * painted on the row); the theme only controls grid geometry, spacing,
+ * shadows, and typography. Sits next to Notion-card and Apple-grid in
+ * this directory; ADR-017 picks one at runtime via the `.theme-linear`
+ * class on the calendar root.
+ */
+.theme-linear {
+  --calendar-grid-bg: #ffffff;
+  --calendar-grid-line: #f1f1f1;
+  --calendar-grid-today-bg: rgba(99, 102, 241, 0.04);
+  --calendar-event-bg-opacity: 0.12;
+  --calendar-event-border-radius: 4px;
+  --calendar-event-shadow: none;
+  --calendar-event-padding-y: 2px;
+  --calendar-event-padding-x: 4px;
+  --calendar-event-left-border-width: 3px;
+  --calendar-task-bg: #ffffff;
+  --calendar-task-border-style: dashed;
+  --calendar-time-axis-width: 48px;
+  --calendar-time-axis-font-weight: 400;
+  --calendar-dayticker-height: 56px;
+  --calendar-dayticker-day-width: 64px;
+  --calendar-dayticker-active-underline-width: 2px;
+}

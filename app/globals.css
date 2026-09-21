@@ -17,6 +17,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import "./calendar/themes/linear.css";
+
 /* ============================================
  * Design tokens (consumed by Tailwind via
  * tailwind.config.ts as `hsl(var(--token))`)
@@ -154,4 +156,22 @@
 
 .muted {
   color: hsl(var(--muted-foreground));
+}
+/* ============================================
+ * Calendar theme class stubs (ADR-017). The
+ * concrete CSS variable values live in the
+ * imported theme files in app/calendar/themes/.
+ * Active theme is set by the calendar root via
+ * one of these classes, driven by
+ * user_settings.calendar_theme.
+ * ============================================ */
+
+.theme-linear {
+  /* values loaded from app/calendar/themes/linear.css */
+}
+.theme-notion {
+  /* values loaded from app/calendar/themes/notion.css */
+}
+.theme-apple {
+  /* values loaded from app/calendar/themes/apple.css */
 }

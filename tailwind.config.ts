@@ -58,6 +58,13 @@ const config: Config = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      calendarGridBg: "var(--calendar-grid-bg)",
+      calendarGridLine: "var(--calendar-grid-line)",
+      calendarGridTodayBg: "var(--calendar-grid-today-bg)",
+      calendarEventRadius: "var(--calendar-event-border-radius)",
+      calendarEventPadding:
+        "var(--calendar-event-padding-y) var(--calendar-event-padding-x)",
+      calendarDaytickerHeight: "var(--calendar-dayticker-height)",
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
         serif: ["var(--font-serif)", "Georgia", "serif"],

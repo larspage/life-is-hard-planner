@@ -1,0 +1,28 @@
+/**
+ * Apple-grid — calendar beta theme (ADR-013 + ADR-017).
+ *
+ * Native iOS / macOS Calendar feel: clean white grid, system-gray 4
+ * dividers, light shadow, light typography (SF Pro weight 300). Event
+ * blocks carry a rounded-end colored accent stripe (the 4px left
+ * border combined with the radius renders as a rounded cap). Tasks
+ * get a pale blue fill with a dashed left border so they read as
+ * "not yet committed" against confirmed events.
+ */
+.theme-apple {
+  --calendar-grid-bg: #ffffff;
+  --calendar-grid-line: #e5e5ea;
+  --calendar-grid-today-bg: rgba(0, 122, 255, 0.04);
+  --calendar-event-bg-opacity: 0.15;
+  --calendar-event-border-radius: 6px;
+  --calendar-event-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+  --calendar-event-padding-y: 4px;
+  --calendar-event-padding-x: 8px;
+  --calendar-event-left-border-width: 4px;
+  --calendar-task-bg: #f0f8ff;
+  --calendar-task-border-style: dashed;
+  --calendar-time-axis-width: 56px;
+  --calendar-time-axis-font-weight: 300;
+  --calendar-dayticker-height: 64px;
+  --calendar-dayticker-day-width: 72px;
+  --calendar-dayticker-active-underline-width: 2px;
+}

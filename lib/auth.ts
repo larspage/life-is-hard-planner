@@ -25,7 +25,7 @@
  * add it back when the phase lands.
  */
 
-import NextAuth, { type NextAuthOptions } from "next-auth";
+import NextAuth, { getServerSession, type NextAuthOptions } from "next-auth";
 import GitHub from "next-auth/providers/github";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
@@ -129,7 +129,11 @@ export const authConfig: NextAuthOptions = {
   },
 };
 
-export const { auth, handlers, signIn, signOut } = NextAuth(authConfig);
+export const handler = NextAuth(authConfig);
+
+export async function auth() {
+  return await getServerSession(authConfig);
+}
 
 export async function requireUserId(): Promise<string> {
   const session = await auth();

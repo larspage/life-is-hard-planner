@@ -1,0 +1,28 @@
+/**
+ * Notion-card — calendar beta theme (ADR-013 + ADR-017).
+ *
+ * Warm-white canvas with rounded, slightly elevated event cards. The
+ * 8px radius and soft 1px shadow mimic Notion's content blocks; the
+ * dotted left accent distinguishes tasks on the grid (Morgen's
+ * "principles as time blocks" hook from ADR-013 pattern #4). Wider
+ * time axis (64px) and heavier weight (500) read better at the larger
+ * card size.
+ */
+.theme-notion {
+  --calendar-grid-bg: #fbfbfa;
+  --calendar-grid-line: #e8e8e7;
+  --calendar-grid-today-bg: rgba(35, 131, 226, 0.05);
+  --calendar-event-bg-opacity: 0.2;
+  --calendar-event-border-radius: 8px;
+  --calendar-event-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --calendar-event-padding-y: 6px;
+  --calendar-event-padding-x: 10px;
+  --calendar-event-left-border-width: 4px;
+  --calendar-task-bg: #f1f1ef;
+  --calendar-task-border-style: dotted;
+  --calendar-time-axis-width: 64px;
+  --calendar-time-axis-font-weight: 500;
+  --calendar-dayticker-height: 72px;
+  --calendar-dayticker-day-width: 80px;
+  --calendar-dayticker-active-underline-width: 3px;
+}
