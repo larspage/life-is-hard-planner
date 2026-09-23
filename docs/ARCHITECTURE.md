@@ -974,7 +974,7 @@ dragAndDrop` addon, ships its own compiled CSS that is styleable
      if bug #1 were fixed, superusers bypass every row-level
      security policy. The policies added in `0001_rls_policies.sql`
      were silently inert. Verified by `SELECT current_setting
-     ('is_superuser') = 'on'` against the local container.
+('is_superuser') = 'on'` against the local container.
   3. **Table owner bypasses RLS without `FORCE`.** After demoting
      `lifeos` to `NOSUPERUSER NOBYPASSRLS`, RLS still wasn't
      enforcing -- because `lifeos` owns all the tables and
@@ -991,9 +991,8 @@ dragAndDrop` addon, ships its own compiled CSS that is styleable
 - **Decision**:
   - **Bug #1**: replace `tx.execute(sql\`SET LOCAL app.user_id =
     ${userId}\`)` with `tx.execute(sql\`SELECT set_config
-    ('app.user_id', ${userId}, true)\`)`. `set_config` is a regular
-    function call so parameter binding works; the third argument
-    `true` makes the setting transaction-local, matching `SET LOCAL`
+    ('app.user_id', ${userId}, true)\`)`. `set_config`is a regular
+function call so parameter binding works; the third argument`true`makes the setting transaction-local, matching`SET LOCAL`
     intent.
   - **Bug #2**: create the `lifeos` role without superuser at
     container init time. `scripts/local-up.sh` now starts the
@@ -1001,7 +1000,7 @@ dragAndDrop` addon, ships its own compiled CSS that is styleable
     once, then runs `scripts/init-nosuperuser.sql` via the
     container's built-in `postgres` OS user to create the
     `lifeos` role as `NOSUPERUSER NOBYPASSRLS CREATEDB
-    CREATEROLE` and grant ownership of the `lifeos` database.
+CREATEROLE` and grant ownership of the `lifeos` database.
     The role retains `CREATEDB` + `CREATEROLE` so `db:generate` +
     `db:migrate` continue to work on a fresh container.
   - **Bug #3**: new migration `0002_force_row_level_security.sql`
@@ -1015,8 +1014,19 @@ dragAndDrop` addon, ships its own compiled CSS that is styleable
     unsets via COMMIT. The 60-day trial downgrade in the `signIn`
     event now also runs inside a transaction with `app.user_id`
     set, instead of as a bare update that would be blocked by RLS.
+  - **Pre-existing policy expressions in `0001_rls_policies.sql`
+    also need a NULLIF guard.** The original expression was
+    `id = current_setting('app.user_id', true)::uuid`. With FORCE
+    RLS, the policy runs against every query, including the
+    auth-bootstrap path where `app.user_id` is intentionally unset
+    and only `app.auth_email_lookup` is set. `current_setting(..., true)`
+    returns an empty string when the GUC is unset; `''::uuid` raises
+    `invalid input syntax for type uuid: ""` (a hard error, not a
+    false match). The fix is `NULLIF(current_setting(..., true), '')::uuid`,
+    which returns NULL when the GUC is unset, and `id = NULL` is
+    always false. Applied to every user-owned table in
+    `0001_rls_policies.sql`.
 - **What does NOT change**:
-  - The policy expressions themselves in `0001_rls_policies.sql`.
   - The `withUserContext` API surface (callers don't change).
   - `app.user_id` is still the GUC that gates per-row isolation.
 - **Consequences**:
@@ -1029,7 +1039,7 @@ dragAndDrop` addon, ships its own compiled CSS that is styleable
     calls skip the SQL since the role already exists.
   - If a future migration needs `CREATE ROLE`, it must be run
     with a superuser connection (e.g., `docker exec -u postgres
-    lifeos-db psql`).
+lifeos-db psql`).
 - **Verification** (all pass against the local container):
   - `set_config` round-trip via `current_setting('app.user_id')`.
   - RLS filters: fake user_id returns 0 rows on `users`.

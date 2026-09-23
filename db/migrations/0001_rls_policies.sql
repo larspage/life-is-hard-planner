@@ -32,8 +32,8 @@
 ALTER TABLE "users" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY user_isolation ON "users"
-  USING (id = current_setting('app.user_id', true)::uuid)
-  WITH CHECK (id = current_setting('app.user_id', true)::uuid);
+  USING (id = NULLIF(current_setting('app.user_id', true), '')::uuid)
+  WITH CHECK (id = NULLIF(current_setting('app.user_id', true), '')::uuid);
 
 -- ============================================
 -- ROLES, VALUES, GOALS, TASKS, TIME_BLOCKS,
@@ -42,48 +42,48 @@ CREATE POLICY user_isolation ON "users"
 
 ALTER TABLE "roles" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY user_isolation ON "roles"
-  USING (user_id = current_setting('app.user_id', true)::uuid)
-  WITH CHECK (user_id = current_setting('app.user_id', true)::uuid);
+  USING (user_id = NULLIF(current_setting('app.user_id', true), '')::uuid)
+  WITH CHECK (user_id = NULLIF(current_setting('app.user_id', true), '')::uuid);
 
 ALTER TABLE "values" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY user_isolation ON "values"
-  USING (user_id = current_setting('app.user_id', true)::uuid)
-  WITH CHECK (user_id = current_setting('app.user_id', true)::uuid);
+  USING (user_id = NULLIF(current_setting('app.user_id', true), '')::uuid)
+  WITH CHECK (user_id = NULLIF(current_setting('app.user_id', true), '')::uuid);
 
 ALTER TABLE "goals" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY user_isolation ON "goals"
-  USING (user_id = current_setting('app.user_id', true)::uuid)
-  WITH CHECK (user_id = current_setting('app.user_id', true)::uuid);
+  USING (user_id = NULLIF(current_setting('app.user_id', true), '')::uuid)
+  WITH CHECK (user_id = NULLIF(current_setting('app.user_id', true), '')::uuid);
 
 ALTER TABLE "tasks" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY user_isolation ON "tasks"
-  USING (user_id = current_setting('app.user_id', true)::uuid)
-  WITH CHECK (user_id = current_setting('app.user_id', true)::uuid);
+  USING (user_id = NULLIF(current_setting('app.user_id', true), '')::uuid)
+  WITH CHECK (user_id = NULLIF(current_setting('app.user_id', true), '')::uuid);
 
 ALTER TABLE "time_blocks" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY user_isolation ON "time_blocks"
-  USING (user_id = current_setting('app.user_id', true)::uuid)
-  WITH CHECK (user_id = current_setting('app.user_id', true)::uuid);
+  USING (user_id = NULLIF(current_setting('app.user_id', true), '')::uuid)
+  WITH CHECK (user_id = NULLIF(current_setting('app.user_id', true), '')::uuid);
 
 ALTER TABLE "habits" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY user_isolation ON "habits"
-  USING (user_id = current_setting('app.user_id', true)::uuid)
-  WITH CHECK (user_id = current_setting('app.user_id', true)::uuid);
+  USING (user_id = NULLIF(current_setting('app.user_id', true), '')::uuid)
+  WITH CHECK (user_id = NULLIF(current_setting('app.user_id', true), '')::uuid);
 
 ALTER TABLE "habit_logs" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY user_isolation ON "habit_logs"
-  USING (user_id = current_setting('app.user_id', true)::uuid)
-  WITH CHECK (user_id = current_setting('app.user_id', true)::uuid);
+  USING (user_id = NULLIF(current_setting('app.user_id', true), '')::uuid)
+  WITH CHECK (user_id = NULLIF(current_setting('app.user_id', true), '')::uuid);
 
 ALTER TABLE "journal_entries" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY user_isolation ON "journal_entries"
-  USING (user_id = current_setting('app.user_id', true)::uuid)
-  WITH CHECK (user_id = current_setting('app.user_id', true)::uuid);
+  USING (user_id = NULLIF(current_setting('app.user_id', true), '')::uuid)
+  WITH CHECK (user_id = NULLIF(current_setting('app.user_id', true), '')::uuid);
 
 ALTER TABLE "file_uploads" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY user_isolation ON "file_uploads"
-  USING (user_id = current_setting('app.user_id', true)::uuid)
-  WITH CHECK (user_id = current_setting('app.user_id', true)::uuid);
+  USING (user_id = NULLIF(current_setting('app.user_id', true), '')::uuid)
+  WITH CHECK (user_id = NULLIF(current_setting('app.user_id', true), '')::uuid);
 
 -- DOWN MIGRATION:
 -- DROP POLICY IF EXISTS user_isolation ON "file_uploads";

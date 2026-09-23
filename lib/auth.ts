@@ -87,16 +87,22 @@ export const authConfig: NextAuthOptions = {
               // or near "$1"` — `SET` is a utility command where
               // parameter substitution isn't valid grammar; see
               // db/index.ts `withUserContext` for the same fix).
-              const user = await db.transaction(async (tx) => {
-                await tx.execute(
-                  sql`SELECT set_config('app.auth_email_lookup', ${parsed.data.email}, true)`,
-                );
-                return tx
-                  .select()
-                  .from(users)
-                  .where(eq(users.email, parsed.data.email))
-                  .limit(1);
-              });
+              let user: (typeof users.$inferSelect)[] = [];
+              try {
+                user = await db.transaction(async (tx) => {
+                  await tx.execute(
+                    sql`SELECT set_config('app.auth_email_lookup', ${parsed.data.email}, true)`,
+                  );
+                  return tx
+                    .select()
+                    .from(users)
+                    .where(eq(users.email, parsed.data.email))
+                    .limit(1);
+                });
+              } catch (e) {
+                console.error("[auth] lookup failed:", (e as Error).message);
+                return null;
+              }
               const found = user[0];
               if (!found) return null;
 
