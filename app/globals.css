@@ -18,6 +18,8 @@
 @tailwind utilities;
 
 @import "./calendar/themes/linear.css";
+@import "./calendar/themes/notion.css";
+@import "./calendar/themes/apple.css";
 
 /* ============================================
  * Design tokens (consumed by Tailwind via

@@ -837,3 +837,108 @@ unknown): Response` mapper in `lib/errors.ts` turns any thrown value into
   - A theme preview can be rendered server-side or client-side by
     swapping the class on the calendar root.
   - Adding a fourth theme is one new CSS file + one enum entry.
+
+### ADR-018: Calendar library — react-big-calendar (supersedes ADR-014's views choice)
+
+- **Status**: Accepted (2026-09-23)
+- **Context**: ADR-014 chose Schedule-X for the v0.2.0-alpha calendar
+  views. After three weeks of cross-project work, the developer is also
+  building a calendar in a separate application using
+  `react-big-calendar` (RBC). The shared developer wants a single
+  calendar library across both apps so that decisions (theming,
+  drag-and-drop overrides, resource columns, a11y patterns, custom
+  toolbar) compound instead of being redone, and so that bugs and fixes
+  in one project help the other.
+- **Options re-considered** (vs. ADR-014):
+  - **react-big-calendar** — MIT, ~8.7k stars, first-class `resources`
+    prop for Calendar Sets, separate `react-big-calendar/lib/addons/
+dragAndDrop` addon, ships its own compiled CSS that is styleable
+    via `components` prop and Tailwind class overrides. Active
+    maintenance (latest 1.19.x). Mature React 18 support.
+  - **Schedule-X** (current) — MIT, modular packages, native TS, CSS
+    designed to coexist with Tailwind. First public release 2023; the
+    brain note on RBC vs Schedule-X captured Schedule-X's newer,
+    less-battle-tested calendar grid as the trade-off we accepted.
+  - **FullCalendar** — MIT core + commercial Premium for DnD
+    ($480/dev/yr). Rejected in ADR-014.
+- **Decision**: **react-big-calendar** for v0.3.0-beta onward. Keep
+  `@dnd-kit` as the drag-and-drop layer (transfers from ADR-014 with
+  no change — RBC ships with react-dnd-style HTML5 DnD in its addon,
+  which we override just like we would have overridden Schedule-X's
+  built-in DnD). Keep the CSS-variable theme system from ADR-017 — it
+  is library-agnostic by design and applies unchanged.
+- **Reasons (in priority order)**:
+  1. **Cross-project consistency** — same library, same wrapper
+     component, same drag-and-drop override pattern, same theme
+     variable surface, same resource-column model. Decisions made in
+     the sibling app transfer directly; bugs fixed in one fix both.
+  2. **First-class resources** — RBC's `resources`/`resourceAccessor`
+     props model Calendar Sets (ADR-013's #1 research finding) with
+     zero custom plumbing. Schedule-X required a custom adapter for
+     the same UX.
+  3. **Mature battle-testing** — RBC has been in production since
+     2015 across thousands of apps. The known limitations
+     (no month-view keyboard nav out of the box, default styles need
+     overriding) are well-documented and have known workarounds in
+     the RBC community.
+  4. **DnD addon, not built-in** — matches the ADR-016 a11y position:
+     we own the drag layer via `@dnd-kit` rather than inheriting a
+     library's HTML5-only DnD. Same shape as the override we would
+     have written for Schedule-X.
+- **What stays** (transferred from ADR-014 with no change):
+  - `@dnd-kit` as the drag layer (ADR-016).
+  - CSS-variable theme system with three themes (ADR-017).
+  - googleapis for Google Calendar sync; Nylas swap-in for v0.4.0.
+  - date-fns + date-fns-tz for time-zones.
+  - shadcn/ui `Calendar` (react-day-picker v8) + `Combobox` for
+    pickers and time-of-day entry.
+- **What changes**:
+  - Replace `@schedule-x/calendar`, `@schedule-x/drag-and-drop`,
+    `@schedule-x/event-modal` with `react-big-calendar` and
+    `react-big-calendar/lib/addons/dragAndDrop`. No `@types` package
+    needed — RBC ships its own types.
+  - The `<Calendar />` wrapper in `app/(portal)/calendar/` will mount
+    RBC inside a custom shell that renders the left-rail Calendar
+    Sets (`resources`) and routes RBC's `onSelectEvent` into the
+    existing event-modal pattern.
+  - The "vendor behind a thin wrapper" mitigation from ADR-014 stays
+    in force. The wrapper is now `lib/calendar/rbc.tsx` and owns the
+    localizer, default props, and theme-class injection.
+- **What is deliberately _not_ changing**:
+  - Theming model (CSS variables, three themes) — works against
+    RBC's `components` prop and Tailwind class overrides.
+  - The decision to defer the custom-Tailwind-grid rewrite — it
+    still belongs at v1.0 once the three themes harden, regardless
+    of which library is underneath the wrapper.
+- **Honest caveats** (so future-us doesn't relitigate):
+  - RBC's Tailwind story is "override the compiled CSS classes,"
+    not "library ships Tailwind." Theming is more work than
+    Schedule-X's CSS-var native support. ADR-017's variable surface
+    absorbs this — we define the variables once, map them in
+    `tailwind.config.ts`, and override RBC's class names in
+    `app/calendar/rbc-overrides.css`.
+  - RBC's default month view is keyboard-light. We will keep month
+    view as read-only for v0.3.0-beta (click a date → open the
+    day-view in a sheet), matching the v0.2.0-alpha scope reduction
+    in ADR-014.
+  - RBC maintenance pace is slower than Schedule-X (the 1.x line
+    had long gaps). Pin a specific version; revisit at v1.0.
+- **Migration plan**:
+  1. `npm uninstall @schedule-x/{calendar,drag-and-drop,event-modal}`
+  2. `npm install react-big-calendar@^1.19`
+  3. Land `lib/calendar/rbc.tsx` wrapper with localizer + theme
+     injection.
+  4. Move `app/(portal)/calendar/` from the Schedule-X stub to the
+     RBC wrapper.
+  5. Smoke-test the three themes + a11y keyboard path.
+  6. Update `docs/SPEC.md` §Calendar UX and any QA scripts that
+     reference Schedule-X by name.
+- **Consequences**:
+  - ADR-014's Schedule-X-specific risks (immaturity, separate
+    DnD plugin) are replaced by RBC-specific risks above.
+  - Cross-project knowledge is now an asset: improvements to
+    `lib/calendar/rbc.tsx` here can be lifted into the sibling
+    app and vice versa.
+  - ADR-017's CSS-variable contract becomes the load-bearing piece
+    of theming — the RBC overrides file must consume every
+    variable in the contract.

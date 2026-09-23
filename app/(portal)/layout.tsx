@@ -55,6 +55,9 @@ export default async function PortalLayout({
           <Link className={styles.navLink} href="/time-blocks">
             Time blocks
           </Link>
+          <Link className={styles.navLink} href="/calendar">
+            Calendar
+          </Link>
         </nav>
         <div className={styles.userBlock}>
           <span className={styles.userEmail}>{session.user.email}</span>

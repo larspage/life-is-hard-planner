@@ -1,0 +1,145 @@
+/**
+ * react-big-calendar → LifeOS theme overrides.
+ *
+ * RBC ships its own compiled CSS in `node_modules/react-big-calendar/
+ * lib/css/react-big-calendar.css`. We do NOT fork that file. Instead,
+ * this stylesheet re-skins RBC's class names by consuming the CSS
+ * variables defined in `app/calendar/themes/{linear,notion,apple}.css`
+ * (ADR-017).
+ *
+ * The contract from ADR-017 is the source of truth — every variable
+ * below MUST be present in every theme file. If a theme is missing one,
+ * the fallback in `:root` here provides a sane default so the page
+ * still renders.
+ *
+ * Per ADR-018, this file is library-agnostic in spirit (it just maps
+ * CSS vars to class names) so a future swap to a custom Tailwind grid
+ * keeps the same theme surface.
+ */
+
+/* ----- Defaults that don't depend on the active theme ----- */
+.theme-linear,
+.theme-notion,
+.theme-apple {
+  /* ADR-017 variables without per-theme overrides get a fallback here. */
+  --calendar-grid-line: rgba(0, 0, 0, 0.08);
+  --calendar-event-bg-opacity: 0.15;
+  --calendar-event-border-radius: 4px;
+  --calendar-event-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --calendar-event-padding-y: 2px;
+  --calendar-event-padding-x: 6px;
+  --calendar-event-left-border-width: 3px;
+  --calendar-task-bg: #ffffff;
+  --calendar-task-border-style: dashed;
+  --calendar-time-axis-width: 56px;
+  --calendar-time-axis-font-weight: 400;
+}
+
+/* ----- Toolbar (view buttons + label) ----- */
+.theme-linear .rbc-toolbar,
+.theme-notion .rbc-toolbar,
+.theme-apple .rbc-toolbar {
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.theme-linear .rbc-toolbar button,
+.theme-notion .rbc-toolbar button,
+.theme-apple .rbc-toolbar button {
+  border-radius: calc(var(--radius) - 2px);
+  padding: 4px 10px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.theme-linear .rbc-toolbar button.rbc-active,
+.theme-notion .rbc-toolbar button.rbc-active,
+.theme-apple .rbc-toolbar button.rbc-active {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-color: hsl(var(--primary));
+}
+
+/* ----- Grid ----- */
+.theme-linear .rbc-month-view,
+.theme-linear .rbc-time-view,
+.theme-notion .rbc-month-view,
+.theme-notion .rbc-time-view,
+.theme-apple .rbc-month-view,
+.theme-apple .rbc-time-view {
+  background: var(--calendar-grid-bg);
+  border: 1px solid var(--calendar-grid-line);
+  border-radius: calc(var(--radius) - 2px);
+}
+
+.theme-linear .rbc-day-bg + .rbc-day-bg,
+.theme-notion .rbc-day-bg + .rbc-day-bg,
+.theme-apple .rbc-day-bg + .rbc-day-bg,
+.theme-linear .rbc-time-content > * + * > *,
+.theme-notion .rbc-time-content > * + * > *,
+.theme-apple .rbc-time-content > * + * > * {
+  border-left-color: var(--calendar-grid-line);
+}
+
+.theme-linear .rbc-time-header-content,
+.theme-notion .rbc-time-header-content,
+.theme-apple .rbc-time-header-content {
+  border-left-color: var(--calendar-grid-line);
+}
+
+.theme-linear .rbc-today,
+.theme-notion .rbc-today,
+.theme-apple .rbc-today {
+  background-color: var(--calendar-grid-today-bg);
+}
+
+/* ----- Time axis ----- */
+.theme-linear .rbc-time-gutter,
+.theme-notion .rbc-time-gutter,
+.theme-apple .rbc-time-gutter {
+  width: var(--calendar-time-axis-width);
+  font-weight: var(--calendar-time-axis-font-weight);
+}
+
+/* ----- Events ----- */
+.theme-linear .rbc-event,
+.theme-notion .rbc-event,
+.theme-apple .rbc-event {
+  border-radius: var(--calendar-event-border-radius);
+  padding: var(--calendar-event-padding-y) var(--calendar-event-padding-x);
+  box-shadow: var(--calendar-event-shadow);
+  /* `--calendar-color` is painted on the calendar row by the parent. */
+  background: color-mix(
+    in srgb,
+    var(--calendar-color, hsl(var(--primary))) var(--calendar-event-bg-opacity),
+    transparent
+  );
+  border-left-width: var(--calendar-event-left-border-width);
+  border-left-style: solid;
+  border-left-color: var(--calendar-color, hsl(var(--primary)));
+}
+
+/* Time-blocked tasks render with the dashed task style. */
+.theme-linear .rbc-event[data-kind="time-block"],
+.theme-notion .rbc-event[data-kind="time-block"],
+.theme-apple .rbc-event[data-kind="time-block"] {
+  background: var(--calendar-task-bg);
+  border-left-style: var(--calendar-task-border-style);
+}
+
+/* Keyboard focus — visible ring, matches the design tokens. */
+.theme-linear .rbc-event:focus,
+.theme-notion .rbc-event:focus,
+.theme-apple .rbc-event:focus {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 1px;
+}
+
+/* ----- "Show more" link inside month view ----- */
+.theme-linear .rbc-show-more,
+.theme-notion .rbc-show-more,
+.theme-apple .rbc-show-more {
+  color: hsl(var(--primary));
+  font-weight: 500;
+}

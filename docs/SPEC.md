@@ -137,26 +137,33 @@ indicators.
 **Implementation stack** (researched against calendar component libraries
 and integrations):
 
-| Concern        | Alpha (v0.2.0-alpha / start of beta)                                                                    | Beta+ (v0.3.0-beta / v0.4.0-GA)                                                                        |
-| -------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Views          | [Schedule-X](https://schedule-x.com) (MIT, modular, unopinionated CSS)                                  | Evaluate custom Tailwind grid once the three themes harden                                             |
-| Drag-and-drop  | [@dnd-kit](https://dndkit.com) (keyboard-first a11y, sortable preset) — override Schedule-X's HTML5-DnD | Same                                                                                                   |
-| Google sync    | [googleapis](https://github.com/googleapis/google-api-nodejs-client) direct (read-only in alpha)        | googleapis + write support                                                                             |
-| Multi-provider | —                                                                                                       | [Nylas](https://developer.nylas.com) for Microsoft + iCloud aggregation                                |
-| ICS            | [node-ical](https://github.com/jens-maus/node-ical) for one-off imports                                 | Add export via `ics` package (RFC 5545 builder)                                                        |
-| Time-zones     | `date-fns` + `date-fns-tz`                                                                              | Migrate to [Temporal](https://tc39.es/proposal-temporal) once stage 4 + Safari native ship (2026-2027) |
-| Pickers        | shadcn/ui `Calendar` (react-day-picker v8) + shadcn `Combobox` for time-of-day                          | Same                                                                                                   |
+| Concern        | Alpha (v0.2.0-alpha / start of beta)                                                                                  | Beta+ (v0.3.0-beta / v0.4.0-GA)                                                                        |
+| -------------- | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Views          | [react-big-calendar](https://github.com/jquense/react-big-calendar) (MIT, first-class `resources` for Calendar Sets)  | Evaluate custom Tailwind grid once the three themes harden                                             |
+| Drag-and-drop  | [@dnd-kit](https://dndkit.com) (keyboard-first a11y, sortable preset) — override react-big-calendar's HTML5-DnD addon | Same                                                                                                   |
+| Google sync    | [googleapis](https://github.com/googleapis/google-api-nodejs-client) direct (read-only in alpha)                      | googleapis + write support                                                                             |
+| Multi-provider | —                                                                                                                     | [Nylas](https://developer.nylas.com) for Microsoft + iCloud aggregation                                |
+| ICS            | [node-ical](https://github.com/jens-maus/node-ical) for one-off imports                                               | Add export via `ics` package (RFC 5545 builder)                                                        |
+| Time-zones     | `date-fns` + `date-fns-tz`                                                                                            | Migrate to [Temporal](https://tc39.es/proposal-temporal) once stage 4 + Safari native ship (2026-2027) |
+| Pickers        | shadcn/ui `Calendar` (react-day-picker v8) + shadcn `Combobox` for time-of-day                                        | Same                                                                                                   |
 
-**Critical accessibility call from research:** override Schedule-X's
-built-in DnD plugin with `@dnd-kit` from day one. Schedule-X ships HTML5
-DnD under the hood, which has no keyboard support. `@dnd-kit`'s keyboard
-sensor and live-region announcements are the difference between a
+**Critical accessibility call from research:** override
+react-big-calendar's built-in DnD addon with `@dnd-kit` from day one.
+react-big-calendar's drag-and-drop addon ships HTML5 DnD under the
+hood, which has no keyboard support. `@dnd-kit`'s keyboard sensor and
+live-region announcements are the difference between a
 Franklin-Covey-grade tool and one that fails keyboard users.
+Cross-project note: this same override pattern is used in the sibling
+calendar app, so the wrapper lives in `lib/calendar/rbc.tsx` and is
+designed to be lifted into both codebases. See ADR-018 for the
+library choice rationale and ADR-016 for the a11y position.
 
 **Theme strategy:** CSS variables, not component variants. Three
 `app/calendar/themes/{linear,notion,apple}.css` files swap based on
-user preference in `user_settings`. Schedule-X exposes its visual
-surface through CSS classes — leverage that.
+user preference in `user_settings`. react-big-calendar exposes its
+visual surface through class names on its cells/events; override them
+in `app/calendar/rbc-overrides.css` so the variables stay the single
+source of truth.
 
 ## Release strategy
 
