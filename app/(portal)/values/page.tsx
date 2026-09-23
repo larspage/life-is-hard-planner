@@ -26,7 +26,7 @@ export default async function ValuesPage() {
   ).map((v) => ({ ...v, tags: v.tags ?? [] }));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <h1 className="text-2xl font-semibold">Values</h1>
       <EntityIntro
         title="What are values?"

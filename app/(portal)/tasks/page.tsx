@@ -66,7 +66,7 @@ export default async function TasksPage() {
   const taskOpts = rows.map((t) => ({ id: t.id, label: t.title }));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <h1 className="text-2xl font-semibold">Tasks</h1>
       <EntityIntro
         title="What are tasks?"

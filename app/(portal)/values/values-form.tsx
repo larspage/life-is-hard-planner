@@ -49,32 +49,34 @@ export function ValuesForm() {
   return (
     <form
       onSubmit={submit}
-      className="space-y-3 rounded-md border border-border bg-card p-4"
+      className="space-y-2 rounded-md border border-border bg-card p-3"
     >
-      <h2 className="text-lg font-semibold">New value</h2>
+      <h2 className="text-base font-semibold">New value</h2>
       {error && <p className="text-sm text-red-600">{error}</p>}
-      <input
-        type="text"
-        placeholder="Value statement"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-        required
-      />
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto]">
+        <input
+          type="text"
+          placeholder="Value statement"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          className="rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
+          required
+        />
+        <button
+          type="submit"
+          disabled={submitting}
+          className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-50"
+        >
+          {submitting ? "Saving..." : "Create value"}
+        </button>
+      </div>
       <input
         type="text"
         placeholder="Tags (comma-separated)"
         value={tagsInput}
         onChange={(e) => setTagsInput(e.target.value)}
-        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
       />
-      <button
-        type="submit"
-        disabled={submitting}
-        className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
-      >
-        {submitting ? "Saving..." : "Create value"}
-      </button>
     </form>
   );
 }
@@ -130,15 +132,15 @@ export function ValueRow({ value }: { value: Value }) {
   }
 
   return (
-    <li className="rounded-md border border-border bg-card p-4">
+    <li className="rounded-md border border-border bg-card p-3">
       {editing ? (
-        <form onSubmit={onSave} className="space-y-3">
+        <form onSubmit={onSave} className="space-y-2">
           {error && <p className="text-sm text-red-600">{error}</p>}
           <input
             type="text"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
             required
           />
           <input
@@ -146,20 +148,20 @@ export function ValueRow({ value }: { value: Value }) {
             value={tagsInput}
             onChange={(e) => setTagsInput(e.target.value)}
             placeholder="Tags (comma-separated)"
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
           />
-          <div className="flex gap-2">
+          <div className="flex justify-end gap-2">
             <button
               type="submit"
               disabled={saving}
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+              className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save"}
             </button>
             <button
               type="button"
               onClick={() => setEditing(false)}
-              className="rounded-md border border-input bg-secondary px-4 py-2 text-sm"
+              className="rounded-md border border-input bg-secondary px-3 py-1.5 text-sm"
             >
               Cancel
             </button>

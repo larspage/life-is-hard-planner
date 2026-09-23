@@ -50,7 +50,7 @@ export default async function TimeBlocksPage() {
   ).map((t) => ({ id: t.id, title: t.title ?? "" }));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <h1 className="text-2xl font-semibold">Time blocks</h1>
       <EntityIntro
         title="What are time blocks?"

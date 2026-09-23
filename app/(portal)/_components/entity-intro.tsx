@@ -18,15 +18,15 @@ type Props = {
 export function EntityIntro({ title, description, examples }: Props) {
   return (
     <aside
-      className="rounded-md border border-border bg-card p-4 text-sm"
+      className="rounded-md border border-border bg-card p-3 text-sm"
       aria-label={`About ${title}`}
     >
       <p className="font-medium">{title}</p>
-      <p className="mt-1 text-muted-foreground">{description}</p>
-      <p className="mt-2 text-xs uppercase tracking-wide text-muted-foreground">
+      <p className="mt-0.5 text-muted-foreground">{description}</p>
+      <p className="mt-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
         Examples
       </p>
-      <ul className="mt-1 list-disc space-y-0.5 pl-5 text-muted-foreground">
+      <ul className="mt-0.5 list-disc space-y-0 pl-5 text-muted-foreground">
         {examples.map((ex) => (
           <li key={ex}>{ex}</li>
         ))}

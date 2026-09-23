@@ -53,7 +53,7 @@ export default async function GoalsPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <h1 className="text-2xl font-semibold">Goals</h1>
       <EntityIntro
         title="What are goals?"

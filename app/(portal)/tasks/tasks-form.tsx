@@ -89,43 +89,38 @@ export function TasksForm({ roles, goals, tasks }: Props) {
   return (
     <form
       onSubmit={submit}
-      className="space-y-3 rounded-md border border-border bg-card p-4"
+      className="space-y-2 rounded-md border border-border bg-card p-3"
     >
-      <h2 className="text-lg font-semibold">New task</h2>
+      <h2 className="text-base font-semibold">New task</h2>
       {error && <p className="text-sm text-red-600">{error}</p>}
       <input
         type="text"
         placeholder="Title"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
         required
-      />
-      <textarea
-        placeholder="Description (optional)"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-        rows={2}
       />
       <div className="grid grid-cols-3 gap-2">
         <label className="text-sm">
-          <span className="block text-muted-foreground">Duration (min)</span>
+          <span className="block text-xs text-muted-foreground">
+            Duration (min)
+          </span>
           <input
             type="number"
             min={1}
             max={1440}
             value={duration}
             onChange={(e) => setDuration(Number(e.target.value))}
-            className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            className="mt-0.5 w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
           />
         </label>
         <label className="text-sm">
-          <span className="block text-muted-foreground">Quadrant</span>
+          <span className="block text-xs text-muted-foreground">Quadrant</span>
           <select
             value={quadrant}
             onChange={(e) => setQuadrant(e.target.value as Task["quadrant"])}
-            className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            className="mt-0.5 w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
           >
             {QUADRANTS.map((q) => (
               <option key={q.value} value={q.value}>
@@ -135,7 +130,9 @@ export function TasksForm({ roles, goals, tasks }: Props) {
           </select>
         </label>
         <label className="text-sm">
-          <span className="block text-muted-foreground">Energy (1-5)</span>
+          <span className="block text-xs text-muted-foreground">
+            Energy (1-5)
+          </span>
           <input
             type="number"
             min={1}
@@ -146,7 +143,7 @@ export function TasksForm({ roles, goals, tasks }: Props) {
                 e.target.value === "" ? "" : Number(e.target.value),
               )
             }
-            className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            className="mt-0.5 w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
           />
         </label>
       </div>
@@ -155,7 +152,7 @@ export function TasksForm({ roles, goals, tasks }: Props) {
           aria-label="Status"
           value={status}
           onChange={(e) => setStatus(e.target.value as Task["status"])}
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+          className="rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
         >
           <option value="TODO">To do</option>
           <option value="SCHEDULED">Scheduled</option>
@@ -168,7 +165,7 @@ export function TasksForm({ roles, goals, tasks }: Props) {
           onChange={(e) =>
             setPriorityType(e.target.value as Task["priorityType"])
           }
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+          className="rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
         >
           <option value="NORMAL">Normal</option>
           <option value="BIG_ROCK">Big rock</option>
@@ -177,7 +174,7 @@ export function TasksForm({ roles, goals, tasks }: Props) {
           aria-label="Role"
           value={roleId}
           onChange={(e) => setRoleId(e.target.value)}
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+          className="rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
         >
           <option value="">No role</option>
           {roles.map((r) => (
@@ -187,41 +184,55 @@ export function TasksForm({ roles, goals, tasks }: Props) {
           ))}
         </select>
       </div>
-      <div className="grid grid-cols-2 gap-2">
-        <select
-          aria-label="Goal"
-          value={goalId}
-          onChange={(e) => setGoalId(e.target.value)}
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+      <details className="rounded-md border border-border bg-background p-2">
+        <summary className="cursor-pointer text-[10px] uppercase tracking-wide text-muted-foreground">
+          Advanced
+        </summary>
+        <div className="mt-2 space-y-2">
+          <textarea
+            placeholder="Description (optional)"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
+            rows={2}
+          />
+          <select
+            aria-label="Goal"
+            value={goalId}
+            onChange={(e) => setGoalId(e.target.value)}
+            className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
+          >
+            <option value="">No goal</option>
+            {goals.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.label}
+              </option>
+            ))}
+          </select>
+          <select
+            aria-label="Parent task"
+            value={parentTaskId}
+            onChange={(e) => setParentTaskId(e.target.value)}
+            className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
+          >
+            <option value="">No parent</option>
+            {tasks.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </details>
+      <div className="flex justify-end">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-50"
         >
-          <option value="">No goal</option>
-          {goals.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.label}
-            </option>
-          ))}
-        </select>
-        <select
-          aria-label="Parent task"
-          value={parentTaskId}
-          onChange={(e) => setParentTaskId(e.target.value)}
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm"
-        >
-          <option value="">No parent</option>
-          {tasks.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.label}
-            </option>
-          ))}
-        </select>
+          {submitting ? "Saving..." : "Create task"}
+        </button>
       </div>
-      <button
-        type="submit"
-        disabled={submitting}
-        className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
-      >
-        {submitting ? "Saving..." : "Create task"}
-      </button>
     </form>
   );
 }
@@ -246,7 +257,7 @@ export function TaskRow({ task, roles, goals, tasks }: TaskRowProps) {
   }
 
   return (
-    <li className="rounded-md border border-border bg-card p-4">
+    <li className="rounded-md border border-border bg-card p-3">
       {editing ? (
         <TaskEditForm
           task={task}

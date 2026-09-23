@@ -73,81 +73,83 @@ export function GoalsForm({ roles, onCreated }: Props) {
   return (
     <form
       onSubmit={submit}
-      className="space-y-3 rounded-md border border-border bg-card p-4"
+      className="space-y-2 rounded-md border border-border bg-card p-3"
     >
-      <h2 className="text-lg font-semibold">New goal</h2>
+      <h2 className="text-base font-semibold">New goal</h2>
       {error && <p className="text-sm text-red-600">{error}</p>}
       <input
         type="text"
         placeholder="Title"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
         required
-      />
-      <textarea
-        placeholder="Description (optional)"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-        rows={2}
       />
       <div className="grid grid-cols-2 gap-2">
         <select
           aria-label="Horizon"
           value={horizon}
           onChange={(e) => setHorizon(e.target.value as typeof horizon)}
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+          className="rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
         >
           <option value="LONG_TERM">Long term</option>
           <option value="MID_TERM">Mid term</option>
         </select>
-        <select
-          aria-label="Status"
-          value={status}
-          onChange={(e) => setStatus(e.target.value as typeof status)}
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm"
-        >
-          <option value="ACTIVE">Active</option>
-          <option value="COMPLETED">Completed</option>
-          <option value="ARCHIVED">Archived</option>
-        </select>
+        <input
+          type="date"
+          aria-label="Target date"
+          value={targetDate}
+          onChange={(e) => setTargetDate(e.target.value)}
+          pattern="\d{4}-\d{2}-\d{2}"
+          className="rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
+        />
       </div>
-      <div className="grid grid-cols-2 gap-2">
-        <label className="block text-sm">
-          <span className="block text-muted-foreground">
-            Target date (YYYY-MM-DD)
-          </span>
-          <input
-            type="date"
-            aria-label="Target date"
-            value={targetDate}
-            onChange={(e) => setTargetDate(e.target.value)}
-            pattern="\d{4}-\d{2}-\d{2}"
-            className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          />
-        </label>
-        <select
-          aria-label="Role"
-          value={roleId}
-          onChange={(e) => setRoleId(e.target.value)}
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm"
-        >
-          <option value="">No role</option>
-          {roles.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      <button
-        type="submit"
-        disabled={submitting}
-        className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+      <select
+        aria-label="Role"
+        value={roleId}
+        onChange={(e) => setRoleId(e.target.value)}
+        className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
       >
-        {submitting ? "Saving..." : "Create goal"}
-      </button>
+        <option value="">No role</option>
+        {roles.map((r) => (
+          <option key={r.id} value={r.id}>
+            {r.name}
+          </option>
+        ))}
+      </select>
+      <details className="rounded-md border border-border bg-background p-2">
+        <summary className="cursor-pointer text-[10px] uppercase tracking-wide text-muted-foreground">
+          Advanced
+        </summary>
+        <div className="mt-2 space-y-2">
+          <textarea
+            placeholder="Description (optional)"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
+            rows={2}
+          />
+          <select
+            aria-label="Status"
+            value={status}
+            onChange={(e) => setStatus(e.target.value as typeof status)}
+            className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
+          >
+            <option value="ACTIVE">Active</option>
+            <option value="COMPLETED">Completed</option>
+            <option value="ARCHIVED">Archived</option>
+          </select>
+        </div>
+      </details>
+      <div className="flex justify-end">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-50"
+        >
+          {submitting ? "Saving..." : "Create goal"}
+        </button>
+      </div>
     </form>
   );
 }
@@ -175,7 +177,7 @@ export function GoalRow({ goal, roles }: GoalRowProps) {
   }
 
   return (
-    <li className="rounded-md border border-border bg-card p-4">
+    <li className="rounded-md border border-border bg-card p-3">
       {editing ? (
         <GoalEditForm
           goal={goal}
@@ -284,27 +286,21 @@ function GoalEditForm({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-3">
+    <form onSubmit={submit} className="space-y-2">
       {error && <p className="text-sm text-red-600">{error}</p>}
       <input
         type="text"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
         required
-      />
-      <textarea
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-        rows={2}
       />
       <div className="grid grid-cols-2 gap-2">
         <select
           aria-label="Horizon"
           value={horizon}
           onChange={(e) => setHorizon(e.target.value as typeof horizon)}
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+          className="rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
         >
           <option value="LONG_TERM">Long term</option>
           <option value="MID_TERM">Mid term</option>
@@ -313,7 +309,7 @@ function GoalEditForm({
           aria-label="Status"
           value={status}
           onChange={(e) => setStatus(e.target.value as typeof status)}
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+          className="rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
         >
           <option value="ACTIVE">Active</option>
           <option value="COMPLETED">Completed</option>
@@ -321,24 +317,19 @@ function GoalEditForm({
         </select>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <label className="block text-sm">
-          <span className="block text-muted-foreground">
-            Target date (YYYY-MM-DD)
-          </span>
-          <input
-            type="date"
-            aria-label="Target date"
-            value={targetDate}
-            onChange={(e) => setTargetDate(e.target.value)}
-            pattern="\d{4}-\d{2}-\d{2}"
-            className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          />
-        </label>
+        <input
+          type="date"
+          aria-label="Target date"
+          value={targetDate}
+          onChange={(e) => setTargetDate(e.target.value)}
+          pattern="\d{4}-\d{2}-\d{2}"
+          className="rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
+        />
         <select
           aria-label="Role"
           value={roleId}
           onChange={(e) => setRoleId(e.target.value)}
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+          className="rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
         >
           <option value="">No role</option>
           {roles.map((r) => (
@@ -348,18 +339,32 @@ function GoalEditForm({
           ))}
         </select>
       </div>
-      <div className="flex gap-2">
+      <details className="rounded-md border border-border bg-background p-2">
+        <summary className="cursor-pointer text-[10px] uppercase tracking-wide text-muted-foreground">
+          Advanced
+        </summary>
+        <div className="mt-2">
+          <textarea
+            placeholder="Description (optional)"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
+            rows={2}
+          />
+        </div>
+      </details>
+      <div className="flex justify-end gap-2">
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+          className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-50"
         >
           {submitting ? "Saving..." : "Save"}
         </button>
         <button
           type="button"
           onClick={onDone}
-          className="rounded-md border border-input bg-secondary px-4 py-2 text-sm"
+          className="rounded-md border border-input bg-secondary px-3 py-1.5 text-sm"
         >
           Cancel
         </button>

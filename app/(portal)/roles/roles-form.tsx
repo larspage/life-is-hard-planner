@@ -56,28 +56,28 @@ export function RolesForm({ roles }: Props) {
   return (
     <form
       onSubmit={submit}
-      className="space-y-3 rounded-md border border-border bg-card p-4"
+      className="space-y-2 rounded-md border border-border bg-card p-3"
     >
-      <h2 className="text-lg font-semibold">New role</h2>
+      <h2 className="text-base font-semibold">New role</h2>
       {error && <p className="text-sm text-red-600">{error}</p>}
       <input
         type="text"
         placeholder="Name"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
         required
       />
       <textarea
         placeholder="Description (optional)"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-        rows={2}
+        className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
+        rows={1}
       />
       <div className="grid grid-cols-2 gap-2">
         <label className="text-sm">
-          <span className="block text-muted-foreground">
+          <span className="block text-xs text-muted-foreground">
             Priority (1 = highest, 5 = lowest)
           </span>
           <input
@@ -86,26 +86,28 @@ export function RolesForm({ roles }: Props) {
             max={5}
             value={priorityWeight}
             onChange={(e) => setPriorityWeight(Number(e.target.value))}
-            className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            className="mt-0.5 w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
           />
         </label>
         <label className="text-sm">
-          <span className="block text-muted-foreground">Color</span>
+          <span className="block text-xs text-muted-foreground">Color</span>
           <input
             type="color"
             value={color}
             onChange={(e) => setColor(e.target.value)}
-            className="mt-1 h-10 w-full rounded-md border border-input bg-background"
+            className="mt-0.5 h-9 w-full rounded-md border border-input bg-background"
           />
         </label>
       </div>
-      <button
-        type="submit"
-        disabled={submitting}
-        className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
-      >
-        {submitting ? "Saving..." : "Create role"}
-      </button>
+      <div className="flex justify-end">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-50"
+        >
+          {submitting ? "Saving..." : "Create role"}
+        </button>
+      </div>
     </form>
   );
 }
@@ -164,26 +166,26 @@ export function RoleRow({ role }: { role: Role }) {
   }
 
   return (
-    <li className="rounded-md border border-border bg-card p-4">
+    <li className="rounded-md border border-border bg-card p-3">
       {editing ? (
-        <form onSubmit={onSave} className="space-y-3">
+        <form onSubmit={onSave} className="space-y-2">
           {error && <p className="text-sm text-red-600">{error}</p>}
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
             required
           />
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            rows={2}
+            className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
+            rows={1}
           />
           <div className="grid grid-cols-2 gap-2">
             <label className="text-sm">
-              <span className="block text-muted-foreground">
+              <span className="block text-xs text-muted-foreground">
                 Priority (1 = highest, 5 = lowest)
               </span>
               <input
@@ -192,31 +194,31 @@ export function RoleRow({ role }: { role: Role }) {
                 max={5}
                 value={priorityWeight}
                 onChange={(e) => setPriorityWeight(Number(e.target.value))}
-                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className="mt-0.5 w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
               />
             </label>
             <label className="text-sm">
-              <span className="block text-muted-foreground">Color</span>
+              <span className="block text-xs text-muted-foreground">Color</span>
               <input
                 type="color"
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
-                className="mt-1 h-10 w-full rounded-md border border-input bg-background"
+                className="mt-0.5 h-9 w-full rounded-md border border-input bg-background"
               />
             </label>
           </div>
-          <div className="flex gap-2">
+          <div className="flex justify-end gap-2">
             <button
               type="submit"
               disabled={saving}
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+              className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save"}
             </button>
             <button
               type="button"
               onClick={() => setEditing(false)}
-              className="rounded-md border border-input bg-secondary px-4 py-2 text-sm"
+              className="rounded-md border border-input bg-secondary px-3 py-1.5 text-sm"
             >
               Cancel
             </button>

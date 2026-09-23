@@ -32,7 +32,7 @@ export default async function RolesPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <h1 className="text-2xl font-semibold">Roles</h1>
       <EntityIntro
         title="What are roles?"

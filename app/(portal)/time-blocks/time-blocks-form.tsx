@@ -76,15 +76,15 @@ export function TimeBlocksForm({ tasks }: Props) {
   return (
     <form
       onSubmit={submit}
-      className="space-y-3 rounded-md border border-border bg-card p-4"
+      className="space-y-2 rounded-md border border-border bg-card p-3"
     >
-      <h2 className="text-lg font-semibold">New time block</h2>
+      <h2 className="text-base font-semibold">New time block</h2>
       {error && <p className="text-sm text-red-600">{error}</p>}
       <select
         aria-label="Task"
         value={taskId}
         onChange={(e) => setTaskId(e.target.value)}
-        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
         required
       >
         <option value="">Pick a task</option>
@@ -94,55 +94,42 @@ export function TimeBlocksForm({ tasks }: Props) {
           </option>
         ))}
       </select>
-      <label className="block text-sm">
-        <span className="block text-muted-foreground">
-          Date — format YYYY-MM-DD (e.g. 2026-09-23)
-        </span>
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
         <input
           type="date"
           aria-label="Date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
           pattern="\d{4}-\d{2}-\d{2}"
-          className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          className="rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
           required
         />
-      </label>
-      <div className="grid grid-cols-2 gap-2">
-        <label className="block text-sm">
-          <span className="block text-muted-foreground">
-            Start (YYYY-MM-DD HH:MM)
-          </span>
-          <input
-            type="datetime-local"
-            aria-label="Start time"
-            value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
-            className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            required
-          />
-        </label>
-        <label className="block text-sm">
-          <span className="block text-muted-foreground">
-            End (YYYY-MM-DD HH:MM)
-          </span>
-          <input
-            type="datetime-local"
-            aria-label="End time"
-            value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
-            className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            required
-          />
-        </label>
+        <input
+          type="datetime-local"
+          aria-label="Start time"
+          value={startTime}
+          onChange={(e) => setStartTime(e.target.value)}
+          className="rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
+          required
+        />
+        <input
+          type="datetime-local"
+          aria-label="End time"
+          value={endTime}
+          onChange={(e) => setEndTime(e.target.value)}
+          className="rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
+          required
+        />
       </div>
-      <button
-        type="submit"
-        disabled={submitting}
-        className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
-      >
-        {submitting ? "Saving..." : "Create time block"}
-      </button>
+      <div className="flex justify-end">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-50"
+        >
+          {submitting ? "Saving..." : "Create time block"}
+        </button>
+      </div>
     </form>
   );
 }
@@ -174,7 +161,7 @@ export function TimeBlockRow({
   }
 
   return (
-    <li className="rounded-md border border-border bg-card p-4">
+    <li className="rounded-md border border-border bg-card p-3">
       {editing ? (
         <TimeBlockEditForm
           block={block}
@@ -263,13 +250,13 @@ function TimeBlockEditForm({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-3">
+    <form onSubmit={submit} className="space-y-2">
       {error && <p className="text-sm text-red-600">{error}</p>}
       <select
         aria-label="Task"
         value={taskId}
         onChange={(e) => setTaskId(e.target.value)}
-        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
         required
       >
         {tasks.map((t) => (
@@ -278,60 +265,45 @@ function TimeBlockEditForm({
           </option>
         ))}
       </select>
-      <label className="block text-sm">
-        <span className="block text-muted-foreground">
-          Date — format YYYY-MM-DD (e.g. 2026-09-23)
-        </span>
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
         <input
           type="date"
           aria-label="Date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
           pattern="\d{4}-\d{2}-\d{2}"
-          className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          className="rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
           required
         />
-      </label>
-      <div className="grid grid-cols-2 gap-2">
-        <label className="block text-sm">
-          <span className="block text-muted-foreground">
-            Start (YYYY-MM-DD HH:MM)
-          </span>
-          <input
-            type="datetime-local"
-            aria-label="Start time"
-            value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
-            className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            required
-          />
-        </label>
-        <label className="block text-sm">
-          <span className="block text-muted-foreground">
-            End (YYYY-MM-DD HH:MM)
-          </span>
-          <input
-            type="datetime-local"
-            aria-label="End time"
-            value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
-            className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            required
-          />
-        </label>
+        <input
+          type="datetime-local"
+          aria-label="Start time"
+          value={startTime}
+          onChange={(e) => setStartTime(e.target.value)}
+          className="rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
+          required
+        />
+        <input
+          type="datetime-local"
+          aria-label="End time"
+          value={endTime}
+          onChange={(e) => setEndTime(e.target.value)}
+          className="rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
+          required
+        />
       </div>
-      <div className="flex gap-2">
+      <div className="flex justify-end gap-2">
         <button
           type="submit"
           disabled={saving}
-          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+          className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-50"
         >
           {saving ? "Saving..." : "Save"}
         </button>
         <button
           type="button"
           onClick={onDone}
-          className="rounded-md border border-input bg-secondary px-4 py-2 text-sm"
+          className="rounded-md border border-input bg-secondary px-3 py-1.5 text-sm"
         >
           Cancel
         </button>
