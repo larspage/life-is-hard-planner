@@ -3,6 +3,7 @@ import { withUserContext } from "@/db";
 import { goals, roles } from "@/db/schema";
 import { requireUserId } from "@/lib/auth";
 import { GoalRow, GoalsForm } from "./goals-form";
+import { EntityIntro } from "../_components/entity-intro";
 
 export const metadata = { title: "Goals — LifeOS" };
 
@@ -54,6 +55,15 @@ export default async function GoalsPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Goals</h1>
+      <EntityIntro
+        title="What are goals?"
+        description="Goals are outcomes you commit to within a role. Long-term goals are your 1–3 year bets; mid-term goals are the 1–3 month checkpoints that make the long ones feel achievable. Attach every goal to a role so it has somewhere to live."
+        examples={[
+          "Become a Staff Engineer (Role: Engineer) — long term",
+          "Ship the v2 billing rewrite by Q2 (Role: Engineer) — mid term",
+          "Read 12 books this year (Role: Self) — long term",
+        ]}
+      />
       <GoalsForm roles={roleRows} />
       {goalRows.length === 0 ? (
         <div className="rounded-md border border-border bg-card p-12 text-center">

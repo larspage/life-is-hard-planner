@@ -3,6 +3,7 @@ import { withUserContext } from "@/db";
 import { values } from "@/db/schema";
 import { requireUserId } from "@/lib/auth";
 import { ValueRow, ValuesForm } from "./values-form";
+import { EntityIntro } from "../_components/entity-intro";
 
 export const metadata = { title: "Values — LifeOS" };
 
@@ -27,6 +28,15 @@ export default async function ValuesPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Values</h1>
+      <EntityIntro
+        title="What are values?"
+        description="Values are the principles you'd hold even if no one was watching. They're deeper than goals — a goal is something you finish, a value is something you live. Listing your values gives you a tiebreaker when two goals compete for time."
+        examples={[
+          "Honesty — speak truth, even when it costs",
+          "Curiosity — keep learning, especially outside your lane",
+          "Family — show up for the people who matter",
+        ]}
+      />
       <ValuesForm />
       {rows.length === 0 ? (
         <div className="rounded-md border border-border bg-card p-12 text-center">

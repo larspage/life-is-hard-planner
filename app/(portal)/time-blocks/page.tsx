@@ -3,6 +3,7 @@ import { withUserContext } from "@/db";
 import { timeBlocks, tasks } from "@/db/schema";
 import { requireUserId } from "@/lib/auth";
 import { TimeBlockRow, TimeBlocksForm } from "./time-blocks-form";
+import { EntityIntro } from "../_components/entity-intro";
 
 export const metadata = { title: "Time blocks — LifeOS" };
 
@@ -51,6 +52,15 @@ export default async function TimeBlocksPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Time blocks</h1>
+      <EntityIntro
+        title="What are time blocks?"
+        description="Time blocks are when a task gets the calendar. A Q2 Big Rock that's still floating in your task list isn't real until it has a date and a start time. Schedule your Big Rocks first, then let Q1 reactive work fill the gaps."
+        examples={[
+          "Wed 9:00–10:30 — Outline the v2 billing design doc",
+          "Sat 07:00–07:30 — 30-min walk after coffee",
+          "Fri 14:00–15:00 — Read chapter 4 of the staff eng book",
+        ]}
+      />
       <TimeBlocksForm tasks={taskOpts} />
       {rows.length === 0 ? (
         <div className="rounded-md border border-border bg-card p-12 text-center">

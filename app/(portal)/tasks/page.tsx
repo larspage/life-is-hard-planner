@@ -3,6 +3,7 @@ import { withUserContext } from "@/db";
 import { tasks, roles, goals } from "@/db/schema";
 import { requireUserId } from "@/lib/auth";
 import { TaskRow, TasksForm } from "./tasks-form";
+import { EntityIntro } from "../_components/entity-intro";
 
 export const metadata = { title: "Tasks — LifeOS" };
 
@@ -67,6 +68,15 @@ export default async function TasksPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Tasks</h1>
+      <EntityIntro
+        title="What are tasks?"
+        description="Tasks are the discrete things you'll do this week. Every task belongs to a role and optionally to a goal, and lives in one of four quadrants: Q1 (urgent + important), Q2 (important, not urgent — your Big Rocks), Q3 (urgent, not important), Q4 (neither). Mark the Q2 ones as Big Rocks — those get scheduled first."
+        examples={[
+          "Outline the v2 billing design doc (Q2, Big Rock, Role: Engineer)",
+          "Reply to vendor contract email (Q3, Role: Engineer)",
+          "30-min walk after lunch (Q2, Big Rock, Role: Self)",
+        ]}
+      />
       <TasksForm roles={roleOpts} goals={goalOpts} tasks={taskOpts} />
       {rows.length === 0 ? (
         <div className="rounded-md border border-border bg-card p-12 text-center">

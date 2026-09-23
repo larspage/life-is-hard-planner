@@ -3,6 +3,7 @@ import { withUserContext } from "@/db";
 import { timeBlocks, tasks } from "@/db/schema";
 import { requireUserId } from "@/lib/auth";
 import { LifeOSCalendarShell } from "./calendar-shell";
+import { EntityIntro } from "../_components/entity-intro";
 
 export const metadata = { title: "Calendar — LifeOS" };
 
@@ -52,6 +53,15 @@ export default async function CalendarPage() {
           Week + day views — month view is read-only in beta (ADR-018).
         </p>
       </header>
+      <EntityIntro
+        title="What is the Calendar?"
+        description="The Calendar is the visual surface where your time blocks live. It reads from the same Time Blocks list on the Time blocks page, so anything you schedule there shows up here — and vice versa. Use the theme buttons to switch between linear (flat), notion (cards), and apple (native-grid) views."
+        examples={[
+          "Week view — the Big Rocks loop. What am I actually doing this week?",
+          "Day view — zoom in. Where is the next hour going?",
+          "Agenda view — what's left? Filter to TODO tasks only.",
+        ]}
+      />
       <LifeOSCalendarShell events={events} />
     </div>
   );

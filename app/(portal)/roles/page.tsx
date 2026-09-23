@@ -3,6 +3,7 @@ import { withUserContext } from "@/db";
 import { roles } from "@/db/schema";
 import { requireUserId } from "@/lib/auth";
 import { RoleRow, RolesForm } from "./roles-form";
+import { EntityIntro } from "../_components/entity-intro";
 
 export const metadata = { title: "Roles — LifeOS" };
 
@@ -33,6 +34,15 @@ export default async function RolesPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Roles</h1>
+      <EntityIntro
+        title="What are roles?"
+        description="Roles are the hats you wear. From Franklin Covey's principle-centered planning: every important thing you'll do this week belongs to a role. Defining your roles first gives daily tasks a place to land — otherwise tasks float around with no anchor."
+        examples={[
+          "Father / Parent — being present for the people you love",
+          "Engineer / IC — your craft and the work you ship",
+          "Self / Health — sleep, movement, faith, hobbies",
+        ]}
+      />
       <RolesForm roles={rows} />
       {rows.length === 0 ? (
         <div className="rounded-md border border-border bg-card p-12 text-center">
