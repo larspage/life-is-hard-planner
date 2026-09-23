@@ -114,13 +114,19 @@ export function GoalsForm({ roles, onCreated }: Props) {
         </select>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <input
-          type="date"
-          aria-label="Target date"
-          value={targetDate}
-          onChange={(e) => setTargetDate(e.target.value)}
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm"
-        />
+        <label className="block text-sm">
+          <span className="block text-muted-foreground">
+            Target date (YYYY-MM-DD)
+          </span>
+          <input
+            type="date"
+            aria-label="Target date"
+            value={targetDate}
+            onChange={(e) => setTargetDate(e.target.value)}
+            pattern="\d{4}-\d{2}-\d{2}"
+            className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          />
+        </label>
         <select
           aria-label="Role"
           value={roleId}
@@ -315,13 +321,19 @@ function GoalEditForm({
         </select>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <input
-          type="date"
-          aria-label="Target date"
-          value={targetDate}
-          onChange={(e) => setTargetDate(e.target.value)}
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm"
-        />
+        <label className="block text-sm">
+          <span className="block text-muted-foreground">
+            Target date (YYYY-MM-DD)
+          </span>
+          <input
+            type="date"
+            aria-label="Target date"
+            value={targetDate}
+            onChange={(e) => setTargetDate(e.target.value)}
+            pattern="\d{4}-\d{2}-\d{2}"
+            className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          />
+        </label>
         <select
           aria-label="Role"
           value={roleId}

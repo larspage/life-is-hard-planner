@@ -77,7 +77,9 @@ export function RolesForm({ roles }: Props) {
       />
       <div className="grid grid-cols-2 gap-2">
         <label className="text-sm">
-          <span className="block text-muted-foreground">Priority (1-5)</span>
+          <span className="block text-muted-foreground">
+            Priority (1 = highest, 5 = lowest)
+          </span>
           <input
             type="number"
             min={1}
@@ -181,7 +183,9 @@ export function RoleRow({ role }: { role: Role }) {
           />
           <div className="grid grid-cols-2 gap-2">
             <label className="text-sm">
-              <span className="block text-muted-foreground">Priority</span>
+              <span className="block text-muted-foreground">
+                Priority (1 = highest, 5 = lowest)
+              </span>
               <input
                 type="number"
                 min={1}

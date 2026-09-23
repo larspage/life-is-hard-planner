@@ -69,7 +69,7 @@ export default async function DashboardPage() {
           gap: 16,
         }}
       >
-        <Stat label="Roles" value={roleCount} href="/goals" />
+        <Stat label="Roles" value={roleCount} href="/roles" />
         <Stat label="Active goals" value={goalCount} href="/goals" />
         <Stat label="Open tasks" value={taskCount} href="/tasks" />
         <Stat
