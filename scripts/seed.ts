@@ -85,29 +85,60 @@ async function main(): Promise<void> {
   );
 
   for (const spec of SEEDS) {
-    // Postgres `INSERT ... ON CONFLICT ... DO UPDATE` is the cleanest
-    // idempotent upsert here — Drizzle's `onConflictDoUpdate` requires a
-    // unique target and `users_email_idx` is the natural one. We use raw
-    // SQL because Drizzle's helper doesn't natively support the
-    // `excluded.column` form on the columns we want to refresh.
+    // Two-step upsert so re-seeding preserves user ids.
+    //
+    // Why: if we used `INSERT ... ON CONFLICT (email) DO UPDATE`
+    // directly with a freshly-randomized id, the conflict branch
+    // would rewrite the existing row's id (because id is included
+    // in the VALUES), rotating every user's UUID on every seed.
+    // That invalidates any active JWT whose `userId` claim pointed
+    // at the old id, so the next /api/* call from that session would
+    // hit a FK violation on a user-scoped table (roles, tasks,
+    // time_blocks, etc.) and return 500.
+    //
+    // Step 1: probe whether the email already exists and capture its
+    // id. If so, we set app.user_id to the EXISTING id (the
+    // user_isolation RLS policy requires that). If not, we generate
+    // a new id.
+    //
+    // Step 2: insert with that id, on conflict (email) refresh only
+    // the columns we actually want to keep current (password_hash,
+    // subscription_tier, trial_expires_at, subscription_expires_at,
+    // updated_at) — id and email are left alone. The returned row is
+    // the existing or newly-created one, both with the SAME id.
     //
     // Dates go in as ISO strings — the postgres-js driver does not
     // accept Date objects inside `sql` tagged templates (it tries to
-    // call Buffer.byteLength on the value). The DB column is timestamptz,
-    // so Postgres parses the ISO string on the way in.
+    // call Buffer.byteLength on the value). The DB column is
+    // timestamptz, so Postgres parses the ISO string on the way in.
     //
     // RLS note (ADR-019): the `users` table has FORCE ROW LEVEL
-    // SECURITY on with a `WITH CHECK` clause that the inserted row's id
-    // must equal `app.user_id`. We pre-generate the UUID here so we
-    // can set `app.user_id` to it for the duration of the insert,
-    // then proceed. For the ON CONFLICT branch (idempotent re-seed),
-    // we use the existing row's id from RETURNING. The whole upsert
-    // runs inside a transaction so the GUC is transaction-local.
-    const generatedId = randomUUID();
+    // SECURITY on. The probe runs as the seed role, which can read
+    // its own row when app.user_id is set (and 0 rows when unset —
+    // see the auth_email_lookup policy in 0002). For a fresh insert
+    // we set app.user_id to the new id; for an existing email we
+    // set it to the existing row's id.
     const result = await db.transaction(async (tx) => {
+      // Probe for an existing row under the auth_email_lookup policy
+      // (see ADR-019 + 0002_force_row_level_security.sql). Without
+      // that GUC, the probe would be blocked by user_isolation and
+      // we'd always see 0 rows. Reset the GUC after the probe so the
+      // INSERT below only sees the user_isolation policy.
       await tx.execute(
-        sql`SELECT set_config('app.user_id', ${generatedId}, true)`,
+        sql`SELECT set_config('app.auth_email_lookup', ${spec.email}, true)`,
       );
+      const existing = await tx.execute(sql`
+        SELECT id FROM users WHERE email = ${spec.email} LIMIT 1;
+      `);
+      await tx.execute(
+        sql`SELECT set_config('app.auth_email_lookup', '', true)`,
+      );
+
+      const existingId = (existing as unknown as Array<{ id: string }>)[0]?.id;
+
+      const userId = existingId ?? randomUUID();
+      await tx.execute(sql`SELECT set_config('app.user_id', ${userId}, true)`);
+
       return tx.execute(sql`
         INSERT INTO users (
           id,
@@ -119,7 +150,7 @@ async function main(): Promise<void> {
           uploaded_bytes
         )
         VALUES (
-          ${generatedId},
+          ${userId},
           ${spec.email},
           ${passwordHash},
           ${spec.subscriptionTier},
