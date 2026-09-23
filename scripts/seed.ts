@@ -23,6 +23,7 @@
 
 import { sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+import { randomUUID } from "node:crypto";
 import { db, closeDb } from "../db";
 import { users } from "../db/schema";
 
@@ -89,31 +90,52 @@ async function main(): Promise<void> {
     // unique target and `users_email_idx` is the natural one. We use raw
     // SQL because Drizzle's helper doesn't natively support the
     // `excluded.column` form on the columns we want to refresh.
-    const result = await db.execute(sql`
-      INSERT INTO users (
-        email,
-        password_hash,
-        subscription_tier,
-        trial_expires_at,
-        subscription_expires_at,
-        uploaded_bytes
-      )
-      VALUES (
-        ${spec.email},
-        ${passwordHash},
-        ${spec.subscriptionTier},
-        ${spec.trialExpiresAt},
-        ${spec.subscriptionExpiresAt},
-        0
-      )
-      ON CONFLICT (email) DO UPDATE SET
-        password_hash = EXCLUDED.password_hash,
-        subscription_tier = EXCLUDED.subscription_tier,
-        trial_expires_at = EXCLUDED.trial_expires_at,
-        subscription_expires_at = EXCLUDED.subscription_expires_at,
-        updated_at = NOW()
-      RETURNING id, email;
-    `);
+    //
+    // Dates go in as ISO strings — the postgres-js driver does not
+    // accept Date objects inside `sql` tagged templates (it tries to
+    // call Buffer.byteLength on the value). The DB column is timestamptz,
+    // so Postgres parses the ISO string on the way in.
+    //
+    // RLS note (ADR-019): the `users` table has FORCE ROW LEVEL
+    // SECURITY on with a `WITH CHECK` clause that the inserted row's id
+    // must equal `app.user_id`. We pre-generate the UUID here so we
+    // can set `app.user_id` to it for the duration of the insert,
+    // then proceed. For the ON CONFLICT branch (idempotent re-seed),
+    // we use the existing row's id from RETURNING. The whole upsert
+    // runs inside a transaction so the GUC is transaction-local.
+    const generatedId = randomUUID();
+    const result = await db.transaction(async (tx) => {
+      await tx.execute(
+        sql`SELECT set_config('app.user_id', ${generatedId}, true)`,
+      );
+      return tx.execute(sql`
+        INSERT INTO users (
+          id,
+          email,
+          password_hash,
+          subscription_tier,
+          trial_expires_at,
+          subscription_expires_at,
+          uploaded_bytes
+        )
+        VALUES (
+          ${generatedId},
+          ${spec.email},
+          ${passwordHash},
+          ${spec.subscriptionTier},
+          ${spec.trialExpiresAt?.toISOString() ?? null},
+          ${spec.subscriptionExpiresAt?.toISOString() ?? null},
+          0
+        )
+        ON CONFLICT (email) DO UPDATE SET
+          password_hash = EXCLUDED.password_hash,
+          subscription_tier = EXCLUDED.subscription_tier,
+          trial_expires_at = EXCLUDED.trial_expires_at,
+          subscription_expires_at = EXCLUDED.subscription_expires_at,
+          updated_at = NOW()
+        RETURNING id, email;
+      `);
+    });
 
     console.log(`  ✓ ${spec.email} (${spec.subscriptionTier})`);
     // Touch `result` so the linter doesn't drop the unused variable when

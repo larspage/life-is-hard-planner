@@ -37,6 +37,7 @@ import GitHub from "next-auth/providers/github";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { sql } from "drizzle-orm";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { users } from "@/db/schema";
@@ -71,11 +72,31 @@ export const authConfig: NextAuthOptions = {
             async authorize(raw) {
               const parsed = credentialsSchema.safeParse(raw);
               if (!parsed.success) return null;
-              const user = await db
-                .select()
-                .from(users)
-                .where(eq(users.email, parsed.data.email))
-                .limit(1);
+              // Auth bootstrap: look up the user by email inside a
+              // transaction with `app.auth_email_lookup` set. The RLS
+              // policy `auth_email_lookup` (added in
+              // db/migrations/0002_force_row_level_security.sql)
+              // grants a single-row SELECT when this GUC matches the
+              // target email. We scope it via `SET LOCAL` so the
+              // value is discarded at COMMIT and cannot leak into
+              // later queries on the same connection.
+              //
+              // We use `set_config(key, value, true)` rather than
+              // `SET LOCAL key = value` because the latter rejects
+              // bound parameters (Postgres reports `syntax error at
+              // or near "$1"` — `SET` is a utility command where
+              // parameter substitution isn't valid grammar; see
+              // db/index.ts `withUserContext` for the same fix).
+              const user = await db.transaction(async (tx) => {
+                await tx.execute(
+                  sql`SELECT set_config('app.auth_email_lookup', ${parsed.data.email}, true)`,
+                );
+                return tx
+                  .select()
+                  .from(users)
+                  .where(eq(users.email, parsed.data.email))
+                  .limit(1);
+              });
               const found = user[0];
               if (!found) return null;
 
@@ -128,24 +149,35 @@ export const authConfig: NextAuthOptions = {
       // subscription tier from TRIAL to FREE on every sign-in. This is the
       // equivalent of the original Express `apps/api/src/routes/auth.ts`
       // lines 130–136 logic, ported to NextAuth's event hook.
+      //
+      // RLS note: `users` has FORCE ROW LEVEL SECURITY on, so a bare
+      // SELECT here would be blocked. We open a transaction, set the
+      // RLS GUC `app.user_id` to the signing-in user's id, then
+      // query. The update is also gated by the same GUC.
       if (!user?.id) return;
-      const rows = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, user.id))
-        .limit(1);
-      const found = rows[0];
-      if (!found) return;
-      if (
-        found.subscriptionTier === "TRIAL" &&
-        found.trialExpiresAt &&
-        found.trialExpiresAt.getTime() < Date.now()
-      ) {
-        await db
-          .update(users)
-          .set({ subscriptionTier: "FREE" })
-          .where(eq(users.id, found.id));
-      }
+      const userId = user.id;
+      await db.transaction(async (tx) => {
+        await tx.execute(
+          sql`SELECT set_config('app.user_id', ${userId}, true)`,
+        );
+        const rows = await tx
+          .select()
+          .from(users)
+          .where(eq(users.id, userId))
+          .limit(1);
+        const found = rows[0];
+        if (!found) return;
+        if (
+          found.subscriptionTier === "TRIAL" &&
+          found.trialExpiresAt &&
+          found.trialExpiresAt.getTime() < Date.now()
+        ) {
+          await tx
+            .update(users)
+            .set({ subscriptionTier: "FREE" })
+            .where(eq(users.id, found.id));
+        }
+      });
     },
   },
 };

@@ -894,9 +894,11 @@ dragAndDrop` addon, ships its own compiled CSS that is styleable
     pickers and time-of-day entry.
 - **What changes**:
   - Replace `@schedule-x/calendar`, `@schedule-x/drag-and-drop`,
-    `@schedule-x/event-modal` with `react-big-calendar` and
-    `react-big-calendar/lib/addons/dragAndDrop`. No `@types` package
-    needed — RBC ships its own types.
+    `@schedule-x/event-modal` with `react-big-calendar`,
+    `react-big-calendar/lib/addons/dragAndDrop`, and
+    `@types/react-big-calendar` (RBC 1.20.0 ships no bundled types,
+    so the DefinitelyTyped package is required for TypeScript
+    consumption).
   - The `<Calendar />` wrapper in `app/(portal)/calendar/` will mount
     RBC inside a custom shell that renders the left-rail Calendar
     Sets (`resources`) and routes RBC's `onSelectEvent` into the
@@ -942,3 +944,93 @@ dragAndDrop` addon, ships its own compiled CSS that is styleable
   - ADR-017's CSS-variable contract becomes the load-bearing piece
     of theming — the RBC overrides file must consume every
     variable in the contract.
+
+### ADR-019: RLS is now actually enforced (set_config + FORCE + auth-lookup)
+
+- **Status**: Accepted (2026-09-23)
+- **Context**: Three bugs shipped together in `f7d706e` (staging
+  environment + user-select login) that silently disabled the
+  defense-in-depth promised by ADR-008. They surfaced only when the
+  calendar route started calling `withUserContext` against a real
+  database and Postgres returned `syntax error at or near "$1"`. Once
+  fixed, deeper inspection revealed that even when the GUC was set
+  correctly, every query still returned every user's rows -- RLS was
+  bypassed at two layers. The bugs are pre-existing in `f7d706e` but
+  were masked by the fact that no route had ever successfully run
+  `withUserContext` end-to-end before (login uses bare `db.select()`
+  and pre-calendar portal routes had the same `SET LOCAL` bug).
+- **The three bugs, ordered by discovery**:
+  1. **`SET LOCAL app.user_id = ${userId}` rejects parameters.**
+     `SET` is a Postgres utility command where parameter binding
+     isn't valid grammar -- the driver correctly sends `$1` and
+     Postgres correctly rejects it. Every call to `withUserContext`
+     since `f7d706e` has thrown a Postgres error on its first line.
+     Login worked by accident because `lib/auth.ts` uses bare
+     `db.select()`, not `withUserContext`. Calendar was the first
+     route to actually exercise the wrapper, which is what surfaced
+     the failure to the user.
+  2. **`lifeos` role was a superuser.** The `postgres:16` Docker
+     image creates `POSTGRES_USER` as a superuser by default. Even
+     if bug #1 were fixed, superusers bypass every row-level
+     security policy. The policies added in `0001_rls_policies.sql`
+     were silently inert. Verified by `SELECT current_setting
+     ('is_superuser') = 'on'` against the local container.
+  3. **Table owner bypasses RLS without `FORCE`.** After demoting
+     `lifeos` to `NOSUPERUSER NOBYPASSRLS`, RLS still wasn't
+     enforcing -- because `lifeos` owns all the tables and
+     Postgres's owner-bypass rule applies unless the table has
+     `ALTER TABLE ... FORCE ROW LEVEL SECURITY`. Documented at
+     https://www.postgresql.org/docs/current/ddl-rowsecurity.html.
+- **Auth-bootstrap problem**: with all three fixed, the credentials
+  provider's "look up user by email" query stops finding the row --
+  the policy requires `app.user_id` to be set, but we don't know
+  the user_id yet. Standard fix: a second narrowly-scoped policy
+  that permits a single-row SELECT when `app.auth_email_lookup`
+  equals the target email. The GUC is set only inside the
+  credentials provider's transaction, never on any other code path.
+- **Decision**:
+  - **Bug #1**: replace `tx.execute(sql\`SET LOCAL app.user_id =
+    ${userId}\`)` with `tx.execute(sql\`SELECT set_config
+    ('app.user_id', ${userId}, true)\`)`. `set_config` is a regular
+    function call so parameter binding works; the third argument
+    `true` makes the setting transaction-local, matching `SET LOCAL`
+    intent.
+  - **Bug #2**: create the `lifeos` role without superuser at
+    container init time. `scripts/local-up.sh` now starts the
+    container with `POSTGRES_USER=postgres` (the real superuser)
+    once, then runs `scripts/init-nosuperuser.sql` via the
+    container's built-in `postgres` OS user to create the
+    `lifeos` role as `NOSUPERUSER NOBYPASSRLS CREATEDB
+    CREATEROLE` and grant ownership of the `lifeos` database.
+    The role retains `CREATEDB` + `CREATEROLE` so `db:generate` +
+    `db:migrate` continue to work on a fresh container.
+  - **Bug #3**: new migration `0002_force_row_level_security.sql`
+    applies `ALTER TABLE ... FORCE ROW LEVEL SECURITY` to every
+    user-owned table (users, roles, values, goals, tasks,
+    time_blocks). Idempotent.
+  - **Auth-bootstrap fix**: same migration adds a `FOR SELECT`
+    policy `auth_email_lookup` on `users`:
+    `USING (email = current_setting('app.auth_email_lookup', true))`.
+    `lib/auth.ts` opens a transaction, sets the GUC, queries,
+    unsets via COMMIT. The 60-day trial downgrade in the `signIn`
+    event now also runs inside a transaction with `app.user_id`
+    set, instead of as a bare update that would be blocked by RLS.
+- **What does NOT change**:
+  - The policy expressions themselves in `0001_rls_policies.sql`.
+  - The `withUserContext` API surface (callers don't change).
+  - `app.user_id` is still the GUC that gates per-row isolation.
+- **Consequences**:
+  - Every existing portal route and API route now works under
+    enforced RLS (verified end-to-end with `curl` on /, /goals,
+    /tasks, /time-blocks, /roles, /values, /calendar -- all 200).
+  - Local dev bring-up now requires the container to start with
+    a real superuser so it can create `lifeos` without superuser.
+    `scripts/local-up.sh` handles this; subsequent `docker start`
+    calls skip the SQL since the role already exists.
+  - If a future migration needs `CREATE ROLE`, it must be run
+    with a superuser connection (e.g., `docker exec -u postgres
+    lifeos-db psql`).
+- **Verification** (all pass against the local container):
+  - `set_config` round-trip via `current_setting('app.user_id')`.
+  - RLS filters: fake user_id returns 0 rows on `users`.
+  - RLS passes: real user_id returns the matching row on `users`.

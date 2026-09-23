@@ -70,6 +70,15 @@ export const db: DrizzleDatabase = new Proxy({} as DrizzleDatabase, {
  *
  * The callback receives the transaction handle; queries must run against
  * that handle (not the top-level `db`) so the GUC scopes correctly.
+ *
+ * Implementation note: we use `SELECT set_config('app.user_id', $1, true)`
+ * rather than `SET LOCAL app.user_id = $1`. The `SET LOCAL` form rejects
+ * bound parameters (Postgres reports `syntax error at or near "$1"`) —
+ * `SET` is a utility command where parameter substitution isn't valid
+ * grammar. `set_config(key, value, is_local)` is a regular function call,
+ * so the driver can bind `$1` safely, and the third argument `true` makes
+ * the setting transaction-local, matching the original `SET LOCAL`
+ * intent.
  */
 export async function withUserContext<T>(
   userId: string,
@@ -77,7 +86,7 @@ export async function withUserContext<T>(
 ): Promise<T> {
   const real = getDb();
   return real.transaction(async (tx) => {
-    await tx.execute(sql`SET LOCAL app.user_id = ${userId}`);
+    await tx.execute(sql`SELECT set_config('app.user_id', ${userId}, true)`);
     return fn(tx);
   });
 }
