@@ -86,7 +86,7 @@ export default async function DashboardPage() {
         >
           <li>Define a role (Parent, Engineer, Self).</li>
           <li>Attach a goal to that role.</li>
-          <li>Pick 2–3 Quadrant II tasks as Big Rocks this week.</li>
+          <li>Pick 2–3 Schedule-quadrant (Q2) tasks as Big Rocks this week.</li>
           <li>Schedule time blocks for each Big Rock.</li>
         </ol>
       </section>

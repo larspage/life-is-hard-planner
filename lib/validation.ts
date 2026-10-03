@@ -9,6 +9,7 @@
  */
 
 import { z } from "zod";
+import { QUADRANT_VALUES } from "@/lib/quadrants";
 
 export const roleSchema = z.object({
   name: z.string().min(1).max(100),
@@ -42,7 +43,9 @@ export const taskSchema = z.object({
     .int()
     .min(1)
     .max(1440, "duration must be <= 24 hours (1440 minutes)"),
-  quadrant: z.enum(["I", "II", "III", "IV"]).default("I"),
+  // Quadrant is required (no default). See db/schema.ts and
+  // docs/V0.3.0-BETA-DESIGN.md §5.1.
+  quadrant: z.enum(QUADRANT_VALUES),
   status: z
     .enum(["TODO", "SCHEDULED", "IN_PROGRESS", "COMPLETE"])
     .default("TODO"),

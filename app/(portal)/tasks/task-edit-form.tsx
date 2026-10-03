@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { QUADRANTS, type Quadrant } from "@/lib/quadrants";
 
 type Task = {
   id: string;
   title: string;
   description: string | null;
   duration: number;
-  quadrant: "I" | "II" | "III" | "IV";
+  quadrant: Quadrant;
   status: "TODO" | "SCHEDULED" | "IN_PROGRESS" | "COMPLETE";
   priorityType: "BIG_ROCK" | "NORMAL";
   energyLevel: number | null;
@@ -18,13 +19,6 @@ type Task = {
 };
 
 type Opt = { id: string; label: string };
-
-const QUADRANTS: Array<{ value: Task["quadrant"]; label: string }> = [
-  { value: "I", label: "I — Urgent & Important" },
-  { value: "II", label: "II — Important, Not Urgent" },
-  { value: "III", label: "III — Urgent, Not Important" },
-  { value: "IV", label: "IV — Neither" },
-];
 
 export function TaskEditForm({
   task,
@@ -43,7 +37,7 @@ export function TaskEditForm({
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description ?? "");
   const [duration, setDuration] = useState(task.duration);
-  const [quadrant, setQuadrant] = useState<Task["quadrant"]>(task.quadrant);
+  const [quadrant, setQuadrant] = useState<Quadrant>(task.quadrant);
   const [status, setStatus] = useState<Task["status"]>(task.status);
   const [priorityType, setPriorityType] = useState<Task["priorityType"]>(
     task.priorityType,
@@ -116,12 +110,12 @@ export function TaskEditForm({
         <select
           aria-label="Quadrant"
           value={quadrant}
-          onChange={(e) => setQuadrant(e.target.value as Task["quadrant"])}
+          onChange={(e) => setQuadrant(e.target.value as Quadrant)}
           className="rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
         >
           {QUADRANTS.map((q) => (
             <option key={q.value} value={q.value}>
-              {q.value}
+              {q.label}
             </option>
           ))}
         </select>

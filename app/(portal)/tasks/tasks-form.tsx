@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { QUADRANTS, QUADRANT_LABEL, type Quadrant } from "@/lib/quadrants";
 import { TaskEditForm } from "./task-edit-form";
 
 type Task = {
@@ -9,7 +10,7 @@ type Task = {
   title: string;
   description: string | null;
   duration: number;
-  quadrant: "I" | "II" | "III" | "IV";
+  quadrant: Quadrant;
   status: "TODO" | "SCHEDULED" | "IN_PROGRESS" | "COMPLETE";
   priorityType: "BIG_ROCK" | "NORMAL";
   energyLevel: number | null;
@@ -26,19 +27,15 @@ type Props = {
   tasks: Opt[];
 };
 
-const QUADRANTS: Array<{ value: Task["quadrant"]; label: string }> = [
-  { value: "I", label: "I — Urgent & Important" },
-  { value: "II", label: "II — Important, Not Urgent" },
-  { value: "III", label: "III — Urgent, Not Important" },
-  { value: "IV", label: "IV — Neither" },
-];
-
 export function TasksForm({ roles, goals, tasks }: Props) {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [duration, setDuration] = useState(30);
-  const [quadrant, setQuadrant] = useState<Task["quadrant"]>("II");
+  // Quadrant is required at the DB level (no default). Start unselected and
+  // require a choice before submit — the Morning Grounds modal is the
+  // canonical triage path for un-classified tasks.
+  const [quadrant, setQuadrant] = useState<Quadrant | null>(null);
   const [status, setStatus] = useState<Task["status"]>("TODO");
   const [priorityType, setPriorityType] =
     useState<Task["priorityType"]>("NORMAL");
@@ -53,6 +50,10 @@ export function TasksForm({ roles, goals, tasks }: Props) {
     e.preventDefault();
     if (!title.trim()) {
       setError("Title is required");
+      return;
+    }
+    if (!quadrant) {
+      setError("Pick a quadrant");
       return;
     }
     setSubmitting(true);
@@ -118,13 +119,19 @@ export function TasksForm({ roles, goals, tasks }: Props) {
         <label className="text-sm">
           <span className="block text-xs text-muted-foreground">Quadrant</span>
           <select
-            value={quadrant}
-            onChange={(e) => setQuadrant(e.target.value as Task["quadrant"])}
+            value={quadrant ?? ""}
+            onChange={(e) =>
+              setQuadrant(e.target.value ? (e.target.value as Quadrant) : null)
+            }
+            required
             className="mt-0.5 w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
           >
+            <option value="" disabled>
+              Pick a quadrant
+            </option>
             {QUADRANTS.map((q) => (
               <option key={q.value} value={q.value}>
-                {q.value}
+                {q.label}
               </option>
             ))}
           </select>
@@ -306,7 +313,7 @@ export function TaskRow({ task, roles, goals, tasks }: TaskRowProps) {
               </span>
             )}
             <span className="rounded-full bg-secondary px-2 py-0.5">
-              Q{task.quadrant}
+              {QUADRANT_LABEL[task.quadrant]}
             </span>
             <span className="rounded-full bg-secondary px-2 py-0.5">
               {task.status}

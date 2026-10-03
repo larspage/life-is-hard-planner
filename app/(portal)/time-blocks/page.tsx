@@ -54,7 +54,7 @@ export default async function TimeBlocksPage() {
       <h1 className="text-2xl font-semibold">Time blocks</h1>
       <EntityIntro
         title="What are time blocks?"
-        description="Time blocks are when a task gets the calendar. A Q2 Big Rock that's still floating in your task list isn't real until it has a date and a start time. Schedule your Big Rocks first, then let Q1 reactive work fill the gaps."
+        description="Time blocks are when a task gets the calendar. A Schedule-quadrant (Q2) Big Rock that's still floating in your task list isn't real until it has a date and a start time. Schedule your Big Rocks first, then let Do First (Q1) reactive work fill the gaps."
         examples={[
           "Wed 9:00–10:30 — Outline the v2 billing design doc",
           "Sat 07:00–07:30 — 30-min walk after coffee",

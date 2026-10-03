@@ -2,6 +2,7 @@ import { asc, eq } from "drizzle-orm";
 import { withUserContext } from "@/db";
 import { tasks, roles, goals } from "@/db/schema";
 import { requireUserId } from "@/lib/auth";
+import type { Quadrant } from "@/lib/quadrants";
 import { TaskRow, TasksForm } from "./tasks-form";
 import { EntityIntro } from "../_components/entity-intro";
 
@@ -12,7 +13,7 @@ type TaskRowData = {
   title: string;
   description: string | null;
   duration: number;
-  quadrant: "I" | "II" | "III" | "IV";
+  quadrant: Quadrant;
   status: "TODO" | "SCHEDULED" | "IN_PROGRESS" | "COMPLETE";
   priorityType: "BIG_ROCK" | "NORMAL";
   energyLevel: number | null;
@@ -70,11 +71,11 @@ export default async function TasksPage() {
       <h1 className="text-2xl font-semibold">Tasks</h1>
       <EntityIntro
         title="What are tasks?"
-        description="Tasks are the discrete things you'll do this week. Every task belongs to a role and optionally to a goal, and lives in one of four quadrants: Q1 (urgent + important), Q2 (important, not urgent — your Big Rocks), Q3 (urgent, not important), Q4 (neither). Mark the Q2 ones as Big Rocks — those get scheduled first."
+        description="Tasks are the discrete things you'll do this week. Every task belongs to a role and optionally to a goal, and lives in one of four quadrants: Do First (Q1, urgent and important), Schedule (Q2, important not urgent — your Big Rocks), Delegate (Q3, urgent not important), Low Priority (Q4, neither). Mark the Q2 ones as Big Rocks — those get scheduled first."
         examples={[
-          "Outline the v2 billing design doc (Q2, Big Rock, Role: Engineer)",
-          "Reply to vendor contract email (Q3, Role: Engineer)",
-          "30-min walk after lunch (Q2, Big Rock, Role: Self)",
+          "Outline the v2 billing design doc (Schedule, Big Rock, Role: Engineer)",
+          "Reply to vendor contract email (Delegate, Role: Engineer)",
+          "30-min walk after lunch (Schedule, Big Rock, Role: Self)",
         ]}
       />
       <TasksForm roles={roleOpts} goals={goalOpts} tasks={taskOpts} />

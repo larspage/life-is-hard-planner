@@ -13,6 +13,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
+import { QUADRANT_VALUES } from "@/lib/quadrants";
 
 // ============================================
 // ENUMS
@@ -34,7 +35,7 @@ export const goalStatusEnum = pgEnum("goal_status", [
   "ARCHIVED",
 ]);
 
-export const quadrantEnum = pgEnum("quadrant", ["I", "II", "III", "IV"]);
+export const quadrantEnum = pgEnum("quadrant", QUADRANT_VALUES);
 
 export const taskStatusEnum = pgEnum("task_status", [
   "TODO",
@@ -185,7 +186,10 @@ export const tasks = pgTable(
     title: text("title").notNull(),
     description: text("description"),
     duration: integer("duration").notNull(),
-    quadrant: quadrantEnum("quadrant").notNull().default("I"),
+    // quadrant is required — no default. Users pick on creation; the
+    // Morning Grounds modal is the canonical triage path for un-classified
+    // tasks. See docs/V0.3.0-BETA-DESIGN.md §5.1.
+    quadrant: quadrantEnum("quadrant").notNull(),
     status: taskStatusEnum("status").notNull().default("TODO"),
     priorityType: priorityTypeEnum("priority_type").notNull().default("NORMAL"),
     energyLevel: integer("energy_level"),

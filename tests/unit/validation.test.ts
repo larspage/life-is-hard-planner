@@ -58,7 +58,24 @@ describe("taskSchema", () => {
     const parsed = taskSchema.safeParse({
       title: "Write a novel",
       duration: 2000,
+      quadrant: "SCHEDULE",
+    });
+    expect(parsed.success).toBe(false);
+  });
+
+  it("rejects unknown quadrant", () => {
+    const parsed = taskSchema.safeParse({
+      title: "Mystery task",
+      duration: 30,
       quadrant: "II",
+    });
+    expect(parsed.success).toBe(false);
+  });
+
+  it("rejects missing quadrant (no default)", () => {
+    const parsed = taskSchema.safeParse({
+      title: "Untriaged task",
+      duration: 30,
     });
     expect(parsed.success).toBe(false);
   });
@@ -67,7 +84,7 @@ describe("taskSchema", () => {
     const parsed = taskSchema.safeParse({
       title: "Deep work block",
       duration: 90,
-      quadrant: "II",
+      quadrant: "SCHEDULE",
       priorityType: "BIG_ROCK",
     });
     expect(parsed.success).toBe(true);

@@ -23,7 +23,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;--> statement-breakpoint
 CREATE TYPE "subscription_tier" AS ENUM ('FREE', 'TRIAL', 'PREMIUM');--> statement-breakpoint
 CREATE TYPE "goal_horizon" AS ENUM ('LONG_TERM', 'MID_TERM');--> statement-breakpoint
 CREATE TYPE "goal_status" AS ENUM ('ACTIVE', 'COMPLETED', 'ARCHIVED');--> statement-breakpoint
-CREATE TYPE "quadrant" AS ENUM ('I', 'II', 'III', 'IV');--> statement-breakpoint
+CREATE TYPE "quadrant" AS ENUM ('DO_FIRST', 'SCHEDULE', 'DELEGATE', 'Q4');--> statement-breakpoint
 CREATE TYPE "task_status" AS ENUM ('TODO', 'SCHEDULED', 'IN_PROGRESS', 'COMPLETE');--> statement-breakpoint
 CREATE TYPE "priority_type" AS ENUM ('BIG_ROCK', 'NORMAL');--> statement-breakpoint
 CREATE TYPE "habit_frequency" AS ENUM ('DAILY', 'WEEKLY', 'CUSTOM');--> statement-breakpoint
@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS "tasks" (
 	"title" text NOT NULL,
 	"description" text,
 	"duration" integer NOT NULL,
-	"quadrant" "quadrant" DEFAULT 'I' NOT NULL,
+	"quadrant" "quadrant" NOT NULL,
 	"status" "task_status" DEFAULT 'TODO' NOT NULL,
 	"priority_type" "priority_type" DEFAULT 'NORMAL' NOT NULL,
 	"energy_level" integer,

@@ -4,6 +4,7 @@ import { tasks } from "@/db/schema";
 import { requireUserId } from "@/lib/auth";
 import { ok } from "@/lib/api";
 import { InternalError, InvalidParameterError, withErrorHandling } from "@/lib/errors";
+import { isQuadrant } from "@/lib/quadrants";
 import { taskSchema } from "@/lib/validation";
 
 export const GET = withErrorHandling(async (req: Request) => {
@@ -24,12 +25,7 @@ export const GET = withErrorHandling(async (req: Request) => {
       filters.push(eq(tasks.status, status));
     }
     if (roleId) filters.push(eq(tasks.roleId, roleId));
-    if (
-      quadrant === "I" ||
-      quadrant === "II" ||
-      quadrant === "III" ||
-      quadrant === "IV"
-    ) {
+    if (isQuadrant(quadrant)) {
       filters.push(eq(tasks.quadrant, quadrant));
     }
 
