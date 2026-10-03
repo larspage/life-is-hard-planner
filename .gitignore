@@ -37,8 +37,7 @@ logs/
 *.seed
 *.pid.lock
 
-# Drizzle local journal
-db/migrations/meta/
+
 
 # Per-project opencode artifacts (teamchat operational debris)
 .opencode/teamchats/
